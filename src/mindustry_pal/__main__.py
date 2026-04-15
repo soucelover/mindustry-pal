@@ -4,8 +4,12 @@ import json
 import os
 import shutil
 import zipfile
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from argparse import Namespace
 
 name = "manage.py"
 usage = None
@@ -94,7 +98,10 @@ def store(args: Namespace) -> None:
         # 'name' is optional arg
         # by default it is the current campaign
         if cfg.get("current-campaign", None) is None:
-            print(err_msg_prefix + "for the first time you should specialize name")
+            print(
+                err_msg_prefix
+                + "for the first time you should specialize name"
+            )
             return
 
         name = cfg["current-campaign"]
@@ -149,10 +156,12 @@ def create(args: Namespace) -> None:
     cfg = load_cfg()
 
     if "current-campaign" not in cfg:
-        print(err_msg_prefix + "you should store current campaign before creating new.")
+        print(
+            err_msg_prefix
+            + "you should store current campaign before creating new."
+        )
         return
-    else:
-        current = resolve_path(Path(cfg["current-campaign"]))
+    current = resolve_path(Path(cfg["current-campaign"]))
 
     new = resolve_path(Path(args.name))
 
@@ -189,13 +198,15 @@ def switch(args: Namespace) -> None:
             + "you must store current campaign before switching to another"
         )
         return
-    else:
-        current = resolve_path(Path(cfg["current-campaign"]))
+    current = resolve_path(Path(cfg["current-campaign"]))
 
     restore = resolve_path(Path(args.name))
 
     if current == restore:
-        print(err_msg_prefix + "you must switch to another campaign, not current,")
+        print(
+            err_msg_prefix
+            + "you must switch to another campaign, not current,"
+        )
         return
 
     if not restore.exists():
@@ -226,7 +237,9 @@ def state(args: Namespace) -> None:
         current = cfg["current-campaign"]
         print(f'Current campaign is "{current}".')
 
-    other_campaigns = [i for i in Path("./campaigns").iterdir() if i.name != current]
+    other_campaigns = [
+        i for i in Path("./campaigns").iterdir() if i.name != current
+    ]
 
     if other_campaigns:
         msg = f"{'Also' if current else 'But'} there "
@@ -238,7 +251,9 @@ def state(args: Namespace) -> None:
             )
         else:
             msg += "are also other campaigns:\n"
-            msg += "\n".join(f"  - {campaign.name}" for campaign in other_campaigns)
+            msg += "\n".join(
+                f"  - {campaign.name}" for campaign in other_campaigns
+            )
 
         print(msg)  # noqa: T201
 
