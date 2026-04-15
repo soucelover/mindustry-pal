@@ -13,6 +13,12 @@ dynamic = ["version"]
 requires-python = ">=3.14"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "pyrefly>=0.61.0",
+    "ruff>=0.15.10",
+]
+
 # ============
 # Build System
 # ============
@@ -25,3 +31,49 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"
+
+# =============
+# Ruff Settings
+# =============
+[tool.ruff]
+line-length = 78 # PEP-8
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules
+select = ["ALL"]
+ignore = [
+    "D",       # Этот репо пока строго не документируется
+    "ARG",     # flake8-unused-arguments (иногда полезен для рефакторинга)
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    "TD003",   # Вставляем Issue Link, только если создаём Issue
+    "FIX",     # Обычно надоедает, но полезно как напоминалка
+    "COM812",  # Redundant with formatter
+    "PLC0414", # Противоречит семантике неиспользуемых явно импортов
+    "EXE001",
+]
+extend-safe-fixes = ["TC"]
+future-annotations = true
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-builtins]
+ignorelist = ["id"]
+
+# ================
+# Pyrefly Settings
+# ================
+
+[tool.pyrefly]
+python-version = "3.14"
+
+[tool.pyrefly.errors]
+redundant-cast = "warn"
