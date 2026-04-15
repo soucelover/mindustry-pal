@@ -1,6 +1,12 @@
+import json
+import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from mindustry_pal.campaigns import mindustry_dir
+
+if TYPE_CHECKING:
+    import zipfile
 
 
 def resolve_path(path: Path) -> Path:

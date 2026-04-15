@@ -1,3 +1,4 @@
+import os
 import zipfile
 from argparse import Namespace
 from pathlib import Path
@@ -108,7 +109,7 @@ def create(args: Namespace) -> None:
     new.parent.mkdir(parents=True, exist_ok=True)
     new.touch()
 
-    with zipfile.ZipFile(new, "w") as znew:
+    with zipfile.ZipFile(new, "w"):
         pass
 
     clear_folder(mindustry_dir)
