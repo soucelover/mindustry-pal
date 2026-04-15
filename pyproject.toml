@@ -15,6 +15,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+    "pyrefly>=0.61.0",
     "ruff>=0.15.10",
 ]
 
@@ -66,3 +67,13 @@ convention = "google"
 
 [tool.ruff.lint.flake8-builtins]
 ignorelist = ["id"]
+
+# ================
+# Pyrefly Settings
+# ================
+
+[tool.pyrefly]
+python-version = "3.14"
+
+[tool.pyrefly.errors]
+redundant-cast = "warn"
