@@ -3,11 +3,10 @@ from argparse import Namespace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mindustry_pal.__main__ import (
+from mindustry_pal.files import (
     clear_folder,
     dump_cfg,
     load_cfg,
-    mindustry_dir,
     resolve_path,
     restore_zip,
     store_to_zip,
@@ -76,6 +75,9 @@ def restore(args: Namespace) -> None:
     cfg["current-campaign"] = restore.name
     dump_cfg(cfg)
     print("Successfully stored campaign.")
+
+
+mindustry_dir = Path(os.getenv("APPDATA")) / "Mindustry"
 
 
 def create(args: Namespace) -> None:
