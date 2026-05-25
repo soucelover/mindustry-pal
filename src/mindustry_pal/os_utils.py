@@ -33,8 +33,14 @@ def get_app_data_directory_string(appname: str) -> Path:
 
 
 @lru_cache
-def get_data_directory() -> Path:
+def get_game_data_directory() -> Path:
     return get_app_data_directory_string("Mindustry").absolute()
 
 
-DATA_DIRECTORY = get_data_directory()
+@lru_cache
+def get_pal_directory() -> Path:
+    return get_app_data_directory_string("Mindustry-Pal").absolute()
+
+
+GAME_DATA_DIRECTORY = get_game_data_directory()
+PAL_DIRECTORY = get_game_data_directory()

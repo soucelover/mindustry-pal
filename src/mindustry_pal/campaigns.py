@@ -11,6 +11,7 @@ from mindustry_pal.files import (
     restore_zip,
     store_to_zip,
 )
+from mindustry_pal.os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -108,7 +109,7 @@ def create(args: Namespace) -> None:
     with zipfile.ZipFile(new, "w"):
         pass
 
-    clear_folder(DATA_DIRECTORY)
+    clear_folder(GAME_DATA_DIRECTORY)
     cfg["current-campaign"] = new.name
     dump_cfg(cfg)
     print("Successfully created new campaign.")

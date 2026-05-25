@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mindustry_pal.os_utils import DATA_DIRECTORY
+from mindustry_pal.os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
     import zipfile
@@ -35,7 +35,7 @@ def store_to_zip(zfile: zipfile.ZipFile) -> None:
         iter = None
         file = None
 
-    stack = [Frame(DATA_DIRECTORY.iterdir())]
+    stack = [Frame(GAME_DATA_DIRECTORY.iterdir())]
 
     while stack:
         last = stack[-1]
@@ -48,14 +48,16 @@ def store_to_zip(zfile: zipfile.ZipFile) -> None:
 
         if last.file.is_dir():
             stack.append(Frame(last.file.iterdir()))
-            zfile.mkdir(str(last.file.relative_to(DATA_DIRECTORY)))
+            zfile.mkdir(str(last.file.relative_to(GAME_DATA_DIRECTORY)))
         else:
-            zfile.write(last.file, str(last.file.relative_to(DATA_DIRECTORY)))
+            zfile.write(
+                last.file, str(last.file.relative_to(GAME_DATA_DIRECTORY))
+            )
 
 
 def restore_zip(zrestore: zipfile.ZipFile) -> None:
-    clear_folder(DATA_DIRECTORY)
-    zrestore.extractall(DATA_DIRECTORY)
+    clear_folder(GAME_DATA_DIRECTORY)
+    zrestore.extractall(GAME_DATA_DIRECTORY)
 
 
 def load_cfg() -> dict:
