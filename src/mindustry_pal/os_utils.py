@@ -4,14 +4,6 @@ from functools import lru_cache
 from pathlib import Path
 
 
-@lru_cache
-def get_data_directory() -> Path:
-    return get_app_data_directory_string("Mindustry").absolute()
-
-
-DATA_DIRECTORY = get_data_directory()
-
-
 def get_app_data_directory_string(appname: str) -> Path:
     os_name = platform.system()
 
@@ -38,3 +30,11 @@ def get_app_data_directory_string(appname: str) -> Path:
         case _:
             msg = f"Operating System {os_name} is not supported"
             raise RuntimeError(msg)
+
+
+@lru_cache
+def get_data_directory() -> Path:
+    return get_app_data_directory_string("Mindustry").absolute()
+
+
+DATA_DIRECTORY = get_data_directory()
