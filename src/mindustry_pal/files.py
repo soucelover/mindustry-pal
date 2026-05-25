@@ -1,4 +1,3 @@
-import json
 import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -58,25 +57,3 @@ def store_to_zip(zfile: zipfile.ZipFile) -> None:
 def restore_zip(zrestore: zipfile.ZipFile) -> None:
     clear_folder(GAME_DATA_DIRECTORY)
     zrestore.extractall(GAME_DATA_DIRECTORY)
-
-
-def load_cfg() -> dict:
-    Path("config.json").touch()
-
-    with open("config.json") as f:
-        cfg = json.load(f)
-
-    if not isinstance(cfg, dict):
-        return {}
-
-    return cfg
-
-
-def dump_cfg(cfg: dict) -> None:
-    if not isinstance(cfg, dict):
-        cfg = {}
-
-    Path("config.json").touch()
-
-    with open("config.json", "w") as f:
-        json.dump(cfg, f)
