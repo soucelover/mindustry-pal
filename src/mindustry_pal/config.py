@@ -1,13 +1,11 @@
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, DirectoryPath, Field
 
 from mindustry_pal.os_utils import GAME_DATA_DIRECTORY, PAL_DIRECTORY
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pydantic import DirectoryPath
 
 
 class PalConfig(BaseModel):
@@ -24,7 +22,7 @@ class PalConfig(BaseModel):
 
         return GAME_DATA_DIRECTORY / "versions"
 
-    config = ConfigDict(serialize_by_alias=True)
+    model_config = ConfigDict(serialize_by_alias=True)
 
 
 def load_config() -> PalConfig:
