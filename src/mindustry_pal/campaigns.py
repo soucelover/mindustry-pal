@@ -1,38 +1,38 @@
-import os
 import zipfile
 from argparse import Namespace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from mindustry_pal.config import dump_config
 from mindustry_pal.files import (
     clear_folder,
-    dump_cfg,
-    load_cfg,
     resolve_path,
     restore_zip,
     store_to_zip,
 )
+from mindustry_pal.os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
     from argparse import Namespace
 
+    from mindustry_pal.config import PalConfig
 
-def store(args: Namespace) -> None:
+
+def store(args: Namespace, config: PalConfig) -> None:
     """Store current campaign"""
     err_msg_prefix = "Failed to store current campaign: "
-    cfg = load_cfg()
 
     if args.name is None:
+        name = config.current_campaign
+
         # 'name' is optional arg
         # by default it is the current campaign
-        if cfg.get("current-campaign", None) is None:
+        if name is None:
             print(
                 err_msg_prefix
                 + "for the first time you should specialize name"
             )
             return
-
-        name = cfg["current-campaign"]
     else:
         name = args.name
 
@@ -43,18 +43,17 @@ def store(args: Namespace) -> None:
     with zipfile.ZipFile(dst, "w") as zfile:
         store_to_zip(zfile)
 
-    cfg["current-campaign"] = dst.name
-    dump_cfg(cfg)
+    config.current_campaign = dst.name
+    dump_config(config)
     print("Successfully stored campaign.")
 
 
-def restore(args: Namespace) -> None:
+def restore(args: Namespace, config: PalConfig) -> None:
     """Restore campaign"""
     err_msg_prefix = "Failed to restore %scampaign"
-    cfg = load_cfg()
 
     if args.name is None:
-        name = cfg.get("current-campaign", None)
+        name = config.current_campaign
 
         if name is None:
             print(
@@ -73,27 +72,23 @@ def restore(args: Namespace) -> None:
     with zipfile.ZipFile(restore, "r") as zrestore:
         restore_zip(zrestore)
 
-    cfg["current-campaign"] = restore.name
-    dump_cfg(cfg)
+    config.current_campaign = restore.name
+    dump_config(config)
     print("Successfully stored campaign.")
 
 
-mindustry_dir = Path(os.getenv("APPDATA")) / "Mindustry"
-
-
-def create(args: Namespace) -> None:
+def create(args: Namespace, config: PalConfig) -> None:
     """Create new campaign and switch to it."""
     err_msg_prefix = "Failed to create new mindustry campaign: "
-    cfg = load_cfg()
 
-    if "current-campaign" not in cfg:
+    if config.current_campaign is None:
         print(
             err_msg_prefix
             + "you should store current campaign before creating new."
         )
         return
-    current = resolve_path(Path(cfg["current-campaign"]))
 
+    current = resolve_path(Path(config.current_campaign))
     new = resolve_path(Path(args.name))
 
     if new.exists():
@@ -112,25 +107,24 @@ def create(args: Namespace) -> None:
     with zipfile.ZipFile(new, "w"):
         pass
 
-    clear_folder(mindustry_dir)
-    cfg["current-campaign"] = new.name
-    dump_cfg(cfg)
+    clear_folder(GAME_DATA_DIRECTORY)
+    config.current_campaign = new.name
+    dump_config(config)
     print("Successfully created new campaign.")
 
 
-def switch(args: Namespace) -> None:
+def switch(args: Namespace, config: PalConfig) -> None:
     """Switch mindustry copaign"""
     err_msg_prefix = "Failed to switch mindustry campaign: "
-    cfg = load_cfg()
 
-    if "current-campaign" not in cfg:
+    if config.current_campaign is None:
         print(
             err_msg_prefix
             + "you must store current campaign before switching to another"
         )
         return
-    current = resolve_path(Path(cfg["current-campaign"]))
 
+    current = resolve_path(Path(config.current_campaign))
     restore = resolve_path(Path(args.name))
 
     if current == restore:
@@ -153,19 +147,17 @@ def switch(args: Namespace) -> None:
     with zipfile.ZipFile(restore, "r") as zrestore:
         restore_zip(zrestore)
 
-    cfg["current-campaign"] = restore.name
-    dump_cfg(cfg)
+    config.current_campaign = restore.name
+    dump_config(config)
     print(f"Successfully switched current campaign to {restore.name}.")
 
 
-def state(args: Namespace) -> None:
-    cfg = load_cfg()
-
-    if "current-campaign" not in cfg:
+def state(args: Namespace, config: PalConfig) -> None:
+    if config.current_campaign is None:
         print("Current campaign wasn't previously stored.")
         current = None
     else:
-        current = cfg["current-campaign"]
+        current = config.current_campaign
         print(f'Current campaign is "{current}".')
 
     other_campaigns = [

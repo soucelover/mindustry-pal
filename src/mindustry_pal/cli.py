@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
 
+from mindustry_pal.config import load_config
+
 from .campaigns import create, restore, state, store, switch
 
 name = "manage.py"
@@ -32,4 +34,6 @@ def cli(args: list[str] | None = None) -> None:
     state_parser.set_defaults(command=state)
 
     parsed = parser.parse_args(args)
-    parsed.command(parsed)
+
+    config = load_config()
+    parsed.command(parsed, config)
