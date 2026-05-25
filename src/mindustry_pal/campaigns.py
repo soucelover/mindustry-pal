@@ -1,4 +1,3 @@
-import os
 import zipfile
 from argparse import Namespace
 from pathlib import Path
@@ -78,9 +77,6 @@ def restore(args: Namespace) -> None:
     print("Successfully stored campaign.")
 
 
-mindustry_dir = Path(os.getenv("APPDATA")) / "Mindustry"
-
-
 def create(args: Namespace) -> None:
     """Create new campaign and switch to it."""
     err_msg_prefix = "Failed to create new mindustry campaign: "
@@ -112,7 +108,7 @@ def create(args: Namespace) -> None:
     with zipfile.ZipFile(new, "w"):
         pass
 
-    clear_folder(mindustry_dir)
+    clear_folder(DATA_DIRECTORY)
     cfg["current-campaign"] = new.name
     dump_cfg(cfg)
     print("Successfully created new campaign.")
