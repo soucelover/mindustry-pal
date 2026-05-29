@@ -1,5 +1,8 @@
 import logging
 import sys
+from typing import ClassVar, override
+
+from termcolor import colored
 
 
 class MaxLevelFilter(logging.Filter):
@@ -7,8 +10,31 @@ class MaxLevelFilter(logging.Filter):
         super().__init__()
         self.level: int = level
 
+    @override
     def filter(self, record: logging.LogRecord) -> bool:
         return record.levelno < self.level
+
+
+class ColoredFormatter(logging.Formatter):
+    table: ClassVar[dict[int, str]] = {
+        logging.DEBUG: colored("debug:", "blue"),
+        logging.WARNING: colored("warning:", "yellow"),
+        logging.ERROR: colored("error:", "red"),
+        logging.CRITICAL: colored("critical:", "red"),
+    }
+
+    def __init__(self) -> None:
+        super().__init__("%(message)s")
+
+    @override
+    def format(self, record: logging.LogRecord) -> str:
+        formatted = super().format(record)
+
+        if record.levelno in self.table:
+            prefix = self.table[record.levelno]
+            return f"{prefix} {formatted}"
+
+        return formatted
 
 
 def setup_logging() -> None:
@@ -23,7 +49,7 @@ def setup_logging() -> None:
     stderr_handler = logging.StreamHandler(sys.stderr)
     stderr_handler.setLevel(logging.WARNING)
 
-    fmt = logging.Formatter("%(levelname)s: %(message)s")
+    fmt = ColoredFormatter()
     stdout_handler.setFormatter(fmt)
     stderr_handler.setFormatter(fmt)
 
