@@ -11,3 +11,7 @@ wheels/
 
 # IDEs
 .vscode
+.python-version
+
+# Configuration files
+.env
