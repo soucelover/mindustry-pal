@@ -55,3 +55,25 @@ def setup_logging() -> None:
 
     root_handler.addHandler(stdout_handler)
     root_handler.addHandler(stderr_handler)
+
+
+LOGGING_LEVELS: dict[int, int | None] = {
+    -2: logging.NOTSET,
+    -1: logging.DEBUG,
+    0: logging.INFO,
+    1: logging.WARNING,
+    2: logging.ERROR,
+    3: None,
+}
+
+
+def set_logging_level(verbosity: int, quietness: int) -> None:
+    lvl_index = max(min(quietness - verbosity, 3), -2)
+
+    level = LOGGING_LEVELS[lvl_index]
+    root_logger = logging.getLogger()
+
+    if level is None:
+        root_logger.disabled = True
+    else:
+        root_logger.setLevel(level)
