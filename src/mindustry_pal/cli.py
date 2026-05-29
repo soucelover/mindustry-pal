@@ -35,6 +35,23 @@ def register_commands(parser: ArgumentParser) -> None:
 
 def cli(args: list[str] | None = None) -> None:
     parser = ArgumentParser(name, usage, description, epilog)
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="count",
+        default=0,
+        dest="quietness",
+        help="Use quiet output",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        dest="verbosity",
+        help="Use verbose output",
+    )
+
     register_commands(parser)
 
     parsed = parser.parse_args(args)
