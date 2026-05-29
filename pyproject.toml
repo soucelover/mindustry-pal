@@ -49,6 +49,7 @@ Changelog = "https://github.com/soucelover/mindustry-pal/releases"
 # ============
 [project.scripts]
 mindustry-pal = "mindustry_pal.__main__:main"
+mindustry = "mindustry_pal.__main__:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
