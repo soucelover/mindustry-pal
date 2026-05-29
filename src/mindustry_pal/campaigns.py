@@ -1,3 +1,4 @@
+import logging
 import zipfile
 from argparse import Namespace
 from pathlib import Path
@@ -18,19 +19,20 @@ if TYPE_CHECKING:
     from mindustry_pal.config import PalConfig
 
 
+logger = logging.getLogger(__name__)
+
+
 def store(args: Namespace, config: PalConfig) -> None:
     """Store current campaign"""
-    err_msg_prefix = "Failed to store current campaign: "
-
     if args.name is None:
         name = config.current_campaign
 
         # 'name' is optional arg
         # by default it is the current campaign
         if name is None:
-            print(
-                err_msg_prefix
-                + "for the first time you should specialize name"
+            logger.error(
+                "Failed to store current campaign: "
+                "for the first time you should specialize name"
             )
             return
     else:
@@ -45,21 +47,19 @@ def store(args: Namespace, config: PalConfig) -> None:
 
     config.current_campaign = dst.name
     dump_config(config)
-    print("Successfully stored campaign.")
+    logger.info("Successfully stored campaign.")
 
 
 def restore(args: Namespace, config: PalConfig) -> None:
     """Restore campaign"""
-    err_msg_prefix = "Failed to restore %scampaign"
-
     if args.name is None:
         name = config.current_campaign
 
         if name is None:
-            print(
-                (err_msg_prefix % "current ")
-                + "You should specify name argument or"
-                + " store current campaign"
+            logger.error(
+                "Failed to restore current campaign. "
+                "You should specify name argument or "
+                "store current campaign"
             )
             return
     else:
@@ -74,17 +74,17 @@ def restore(args: Namespace, config: PalConfig) -> None:
 
     config.current_campaign = restore.name
     dump_config(config)
-    print("Successfully stored campaign.")
+    logger.info("Successfully stored campaign.")
 
 
 def create(args: Namespace, config: PalConfig) -> None:
     """Create new campaign and switch to it."""
-    err_msg_prefix = "Failed to create new mindustry campaign: "
+    err_msg_prefix = "Failed to create new mindustry campaign"
 
     if config.current_campaign is None:
-        print(
-            err_msg_prefix
-            + "you should store current campaign before creating new."
+        logger.error(
+            "%s: you should store current campaign before creating new.",
+            err_msg_prefix,
         )
         return
 
@@ -92,7 +92,9 @@ def create(args: Namespace, config: PalConfig) -> None:
     new = resolve_path(Path(args.name))
 
     if new.exists():
-        print(err_msg_prefix + "you must create new campaign, not existing.")
+        logger.error(
+            "%s: you must create new campaign, not existing.", err_msg_prefix
+        )
         return
 
     current.parent.mkdir(parents=True, exist_ok=True)
@@ -110,17 +112,17 @@ def create(args: Namespace, config: PalConfig) -> None:
     clear_folder(GAME_DATA_DIRECTORY)
     config.current_campaign = new.name
     dump_config(config)
-    print("Successfully created new campaign.")
+    logger.info("Successfully created new campaign.")
 
 
 def switch(args: Namespace, config: PalConfig) -> None:
     """Switch mindustry copaign"""
-    err_msg_prefix = "Failed to switch mindustry campaign: "
+    err_msg_prefix = "Failed to switch mindustry campaign"
 
     if config.current_campaign is None:
-        print(
-            err_msg_prefix
-            + "you must store current campaign before switching to another"
+        logger.error(
+            "%s: you must store current campaign before switching to another",
+            err_msg_prefix,
         )
         return
 
@@ -128,14 +130,16 @@ def switch(args: Namespace, config: PalConfig) -> None:
     restore = resolve_path(Path(args.name))
 
     if current == restore:
-        print(
-            err_msg_prefix
-            + "you must switch to another campaign, not current,"
+        logger.error(
+            "%s: you must switch to another campaign, not current",
+            err_msg_prefix,
         )
         return
 
     if not restore.exists():
-        print(err_msg_prefix + f"campaign {args.name} doesn't exist.")
+        logger.error(
+            "%s: campaign %s doesn't exist", err_msg_prefix, args.name
+        )
         return
 
     current.parent.mkdir(parents=True, exist_ok=True)
@@ -149,16 +153,16 @@ def switch(args: Namespace, config: PalConfig) -> None:
 
     config.current_campaign = restore.name
     dump_config(config)
-    print(f"Successfully switched current campaign to {restore.name}.")
+    logger.info("Successfully switched current campaign to %s.", restore.name)
 
 
 def state(args: Namespace, config: PalConfig) -> None:
     if config.current_campaign is None:
-        print("Current campaign wasn't previously stored.")
+        logger.info("Current campaign wasn't previously stored.")
         current = None
     else:
         current = config.current_campaign
-        print(f'Current campaign is "{current}".')
+        logger.info("Current campaign is %r.", current)
 
     other_campaigns = [
         i for i in Path("./campaigns").iterdir() if i.name != current
@@ -178,4 +182,4 @@ def state(args: Namespace, config: PalConfig) -> None:
                 f"  - {campaign.name}" for campaign in other_campaigns
             )
 
-        print(msg)  # noqa: T201
+        logger.info(msg)
