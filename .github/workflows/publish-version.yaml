@@ -50,7 +50,7 @@ jobs:
 
       - name: Publish package to PyPI
         env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PIPY_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
           uv publish
 
