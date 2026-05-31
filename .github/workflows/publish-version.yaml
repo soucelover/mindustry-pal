@@ -1,0 +1,51 @@
+name: Python package
+
+on:
+  push:
+    # On version pushes
+    tags:
+    - v?.*
+  
+  workflow_dispatch:
+
+
+jobs:
+  publish:
+    name: Build and publish Python Package
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version-file: "pyproject.toml"
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        activate-environment: true
+        enable-cache: true
+
+    - name: Synchronise dependencies
+      run: |
+        uv pip install hatchling hatch-vcs
+
+    - name: Verify release version
+      shell: bash
+      run: |
+        version="$(hatchling version)"
+        if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Expected a pure release version, got: $version"
+          exit 1
+        fi
+      
+    - name: Build package
+      run: |
+        uv build
+
+    - name: Publish package to PyPI
+      env:
+        UV_PUBLISH_TOKEN: ${{ secrets.PIPY_TOKEN }}
+      run: |
+        uv publish
