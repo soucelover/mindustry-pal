@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 
 from mindustry_pal.config import load_config
+from mindustry_pal.errors import CommandError
 
 from .campaigns import create, restore, state, store, switch
 
@@ -55,6 +56,9 @@ def cli(args: list[str] | None = None) -> None:
     register_commands(parser)
 
     parsed = parser.parse_args(args)
-
     config = load_config()
-    parsed.command(parsed, config)
+
+    try:
+        parsed.command(parsed, config)
+    except CommandError as exc:
+        exc.log()
