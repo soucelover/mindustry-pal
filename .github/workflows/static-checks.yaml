@@ -1,0 +1,58 @@
+name: Static file checks
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches:
+      - master
+
+jobs:
+  lint-and-format:
+    name: Lint and check formatting
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check formatting
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: format --check --diff --exclude=src/manager --exclude=src/connection
+
+      - name: Check linting
+        run: |
+          ruff check --output-format=github --extend-exclude=src/manager --extend-exclude=src/connection
+
+  type-checking:
+    name: Static type checking
+    runs-on: ubuntu-latest
+
+    if: github.event.pull_request.draft == false
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          activate-environment: true
+          enable-cache: true
+
+      - name: Synchronise dependencies
+        run: |
+          uv sync --locked --all-extras --all-groups --dev
+
+      - name: Check with Pyright
+        uses: jakebailey/pyright-action@v2
+        with:
+          version: latest
+          annotate: all
