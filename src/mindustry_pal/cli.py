@@ -1,9 +1,14 @@
 from argparse import ArgumentParser
+from typing import TYPE_CHECKING
 
 from mindustry_pal.config import load_config
 from mindustry_pal.errors import CommandError
+from mindustry_pal.logging import set_logging_level
 
 from .campaigns import create, restore, state, store, switch
+
+if TYPE_CHECKING:
+    from argparse import Namespace
 
 name = "manage.py"
 usage = None
@@ -34,6 +39,17 @@ def register_commands(parser: ArgumentParser) -> None:
     state_parser.set_defaults(command=state)
 
 
+def process_logging_parameters(args: Namespace) -> None:
+    verbosity: int = args.verbosity
+    quietness: int = args.quietness
+
+    if verbosity != 0 and quietness != 0:
+        msg = "The argument '--quiet...' cannot be used with '--verbose...'"
+        raise CommandError(msg)
+
+    set_logging_level(verbosity, quietness)
+
+
 def cli(args: list[str] | None = None) -> None:
     parser = ArgumentParser(name, usage, description, epilog)
     parser.add_argument(
@@ -56,9 +72,11 @@ def cli(args: list[str] | None = None) -> None:
     register_commands(parser)
 
     parsed = parser.parse_args(args)
-    config = load_config()
 
     try:
+        process_logging_parameters(parsed)
+
+        config = load_config()
         parsed.command(parsed, config)
     except CommandError as exc:
         exc.log()
