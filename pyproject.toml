@@ -99,9 +99,20 @@ ignorelist = ["id"]
 runtime-evaluated-base-classes = ["pydantic.BaseModel"]
 
 # ================
+# Pyright Settings
+# ================
+[tool.pyright]
+typeCheckingMode = "strict"
+
+reportUnusedImport = "warning"
+reportUnusedClass = "warning"
+reportUnusedFunction = "warning"
+reportUnusedVariable = "warning"
+reportUnnecessaryCast = "warning"
+
+# ================
 # Pyrefly Settings
 # ================
-
 [tool.pyrefly]
 python-version = "3.14"
 
