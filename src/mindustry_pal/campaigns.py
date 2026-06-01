@@ -179,3 +179,10 @@ def state(args: Namespace, config: PalConfig) -> None:
             )
 
         logger.info(msg)
+
+
+class CampaignService:
+    config: PalConfig
+
+    def __init__(self, config: PalConfig) -> None:
+        self.config = config
