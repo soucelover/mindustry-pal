@@ -55,7 +55,7 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
         )
         raise StoreCommandError(msg) from exc
 
-    if name is not None:
+    if name is not None and not exists_ok and campaign.exists:
         if exists_ok is False:
             msg = dedent(f"""\
                 Campaign storage
