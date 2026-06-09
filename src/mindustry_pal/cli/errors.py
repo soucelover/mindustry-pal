@@ -1,3 +1,5 @@
+"""Logical errors classes for CLI commands."""
+
 import logging
 
 logger = logging.getLogger()

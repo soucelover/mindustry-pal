@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .cli import CommandError
 from .config import dump_config
-from .errors import CommandError
 from .files import (
     add_to_zip,
     clear_folder,

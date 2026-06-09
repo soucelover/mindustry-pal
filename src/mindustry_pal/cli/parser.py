@@ -1,17 +1,19 @@
+"""Main `ArgumentParser` of the CLI."""
+
 from argparse import ArgumentParser
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Protocol
 
-from .campaigns import create, restore, state, store, switch
-from .config import load_config
-from .errors import CommandError
-from .logging import set_logging_level
+from mindustry_pal.campaigns import create, restore, state, store, switch
+from mindustry_pal.cli.errors import CommandError
+from mindustry_pal.config import load_config
+from mindustry_pal.logging import set_logging_level
 
 if TYPE_CHECKING:
     from argparse import Namespace
     from collections.abc import Sequence
 
-    from .config import PalConfig
+    from mindustry_pal.config import PalConfig
 
 name = "manage.py"
 usage = None
