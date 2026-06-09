@@ -1,3 +1,4 @@
+import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -56,6 +57,30 @@ def store_to_zip(zfile: zipfile.ZipFile) -> None:
             zfile.write(
                 last.file, str(last.file.relative_to(GAME_DATA_DIRECTORY))
             )
+
+
+def add_to_zip(zfile: zipfile.ZipFile, entry: Path, base: Path) -> None:
+    """Add a file or directory to the specified `.zip` file.
+
+    Args:
+        zfile: A `.zip` file abstraction new entry is to be added to.
+        entry: A file or directory to be added to the `.zip` file.
+        base: Base path relative to which new entry's internal name is
+            chosen.
+    """
+    if entry.is_file():
+        zfile.write(entry, entry.relative_to(base))
+    elif entry.is_dir():
+        for subdir, _dirnames, files in os.walk(entry):
+            folder = Path(subdir)
+
+            if folder != base:
+                zfile.mkdir(str(folder.relative_to(base)))
+
+            for filename in files:
+                filepath = folder / filename
+
+                zfile.write(filepath, filepath.relative_to(base))
 
 
 def restore_zip(zrestore: zipfile.ZipFile) -> None:

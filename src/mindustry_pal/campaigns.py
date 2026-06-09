@@ -5,20 +5,21 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mindustry_pal.config import dump_config
-from mindustry_pal.errors import CommandError
-from mindustry_pal.files import (
+from .config import dump_config
+from .errors import CommandError
+from .files import (
+    add_to_zip,
     clear_folder,
     resolve_path,
     restore_zip,
     store_to_zip,
 )
-from mindustry_pal.os_utils import GAME_DATA_DIRECTORY
+from .os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
     from argparse import Namespace
 
-    from mindustry_pal.config import PalConfig
+    from .config import PalConfig
 
 
 logger = logging.getLogger(__name__)
@@ -223,7 +224,17 @@ class CampaignHelper:
             storage: A `.zip` storage file where current Mindustry
                 campaign gets stored to.
         """
-        raise NotImplementedError
+        dst = storage.path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.touch()
+        base = GAME_DATA_DIRECTORY
+
+        with zipfile.ZipFile(dst, "w") as zfile:
+            add_to_zip(zfile, base / "saves/", base)
+            add_to_zip(zfile, base / "mods/", base)
+            add_to_zip(zfile, base / "maps/", base)
+            add_to_zip(zfile, base / "schematics/", base)
+            add_to_zip(zfile, base / "settings.bin", base)
 
     def get_current_campaign(
         self, *, check_exists: bool = False
