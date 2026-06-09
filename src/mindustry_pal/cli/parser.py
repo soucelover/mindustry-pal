@@ -1,8 +1,8 @@
 """Main `ArgumentParser` of the CLI."""
 
 import inspect
-from argparse import ArgumentParser
-from typing import TYPE_CHECKING, Protocol
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from typing import TYPE_CHECKING
 
 from mindustry_pal.campaigns import create, restore, state, switch
 from mindustry_pal.cli.commands import store_command
@@ -12,7 +12,10 @@ from mindustry_pal.logging import set_logging_level
 from .errors import CommandError
 
 if TYPE_CHECKING:
-    from argparse import Namespace
+    from argparse import (
+        Namespace,
+        _SubParsersAction,  # pyright: ignore[reportPrivateUsage]
+    )
     from collections.abc import Sequence
 
     from .base import CommandFunction
@@ -24,21 +27,8 @@ description = "Manager made for mindustry game."
 epilog = "epi"
 
 
-class SubParsersAction[ArgumentParserT: ArgumentParser](Protocol):
-    """A protocol providing types of `argparse._SubParsersAction`."""
-
-    def add_parser(
-        self,
-        name: str,
-        *,
-        help: str | None = None,  # noqa: A002
-        aliases: Sequence[str] = (),
-        description: str | None = None,
-    ) -> ArgumentParserT: ...
-
-
 def add_command(
-    commands: SubParsersAction[ArgumentParser],
+    commands: _SubParsersAction[ArgumentParser],
     name: str,
     function: CommandFunction,
     *,
@@ -64,11 +54,18 @@ def add_command(
 
     if aliases is None:
         parser = commands.add_parser(
-            name, help=first_line, description=description
+            name,
+            help=first_line,
+            description=description,
+            formatter_class=RawDescriptionHelpFormatter,
         )
     else:
         parser = commands.add_parser(
-            name, help=first_line, description=description, aliases=aliases
+            name,
+            help=first_line,
+            description=description,
+            formatter_class=RawDescriptionHelpFormatter,
+            aliases=aliases,
         )
 
     parser.set_defaults(command=function)
