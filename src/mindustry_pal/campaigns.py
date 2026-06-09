@@ -1,6 +1,7 @@
 import logging
 import zipfile
 from argparse import Namespace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -181,8 +182,36 @@ def state(args: Namespace, config: PalConfig) -> None:
         logger.info(msg)
 
 
-class CampaignService:
+@dataclass(slots=True, frozen=True)
+class CampaignStorage:
+    """Dataclass representing campaign storage file."""
+
+    path: Path
+
+    @property
+    def name(self) -> str:
+        """Name of the campaign storage (name of the file)."""
+        return self.path.stem
+
+
+class CampaignHelper:
+    """A helper class for working with campaign files."""
+
     config: PalConfig
 
     def __init__(self, config: PalConfig) -> None:
+        """Initialize class -- store its dependencies.
+
+        Args:
+            config: Configuration of the Mindustry-Pal utility.
+        """
         self.config = config
+
+    def store(self, storage: CampaignStorage) -> None:
+        """Store current campaign to `storage`.
+
+        Args:
+            storage: A `.zip` storage file where current Mindustry
+                campaign gets stored to.
+        """
+        raise NotImplementedError
