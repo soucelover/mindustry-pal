@@ -1,54 +1,28 @@
 import logging
 import zipfile
 from argparse import Namespace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mindustry_pal.config import dump_config
-from mindustry_pal.errors import CommandError
-from mindustry_pal.files import (
+from .cli import CommandError
+from .config import dump_config
+from .files import (
+    add_to_zip,
     clear_folder,
     resolve_path,
     restore_zip,
     store_to_zip,
 )
-from mindustry_pal.os_utils import GAME_DATA_DIRECTORY
+from .os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
     from argparse import Namespace
 
-    from mindustry_pal.config import PalConfig
+    from .config import PalConfig
 
 
 logger = logging.getLogger(__name__)
-
-
-def store(args: Namespace, config: PalConfig) -> None:
-    """Store current campaign"""
-    if args.name is None:
-        name = config.current_campaign
-
-        # 'name' is optional arg
-        # by default it is the current campaign
-        if name is None:
-            msg = (
-                "Failed to store current campaign: "
-                "for the first time you should specialize name"
-            )
-            raise CommandError(msg)
-    else:
-        name = args.name
-
-    dst = resolve_path(Path(name))
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.touch()
-
-    with zipfile.ZipFile(dst, "w") as zfile:
-        store_to_zip(zfile)
-
-    config.current_campaign = dst.name
-    dump_config(config)
-    logger.info("Successfully stored campaign.")
 
 
 def restore(args: Namespace, config: PalConfig) -> None:
@@ -179,3 +153,116 @@ def state(args: Namespace, config: PalConfig) -> None:
             )
 
         logger.info(msg)
+
+
+class CurrentCampaignNotSetError(Exception):
+    """Current config is missing value for `current-campaign`."""
+
+
+@dataclass(slots=True, frozen=True)
+class CampaignStorage:
+    """Dataclass representing campaign storage file."""
+
+    path: Path
+
+    @property
+    def name(self) -> str:
+        """Name of the campaign storage (name of the file)."""
+        return self.path.stem
+
+    @property
+    def exists(self) -> bool:
+        """Check if the storage file does exist."""
+        return self.path.is_file()
+
+    def __str__(self) -> str:
+        """String representation of campaign file path."""
+        return str(self.path)
+
+
+class CampaignHelper:
+    """A helper class for working with campaign files."""
+
+    config: PalConfig
+
+    def __init__(self, config: PalConfig) -> None:
+        """Initialize class -- store its dependencies.
+
+        Args:
+            config: Configuration of the Mindustry-Pal utility.
+        """
+        self.config = config
+
+    def store(self, storage: CampaignStorage) -> None:
+        """Store current campaign to `storage`.
+
+        Args:
+            storage: A `.zip` storage file where current Mindustry
+                campaign gets stored to.
+        """
+        dst = storage.path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.touch()
+        base = GAME_DATA_DIRECTORY
+
+        with zipfile.ZipFile(dst, "w") as zfile:
+            add_to_zip(zfile, base / "saves/", base)
+            add_to_zip(zfile, base / "mods/", base)
+            add_to_zip(zfile, base / "maps/", base)
+            add_to_zip(zfile, base / "schematics/", base)
+            add_to_zip(zfile, base / "settings.bin", base)
+
+    def get_campaign_path(self, name: str) -> Path:
+        """Get path of the campaign storage file by its name.
+
+        Args:
+            name: Name of the campaign.
+
+        Returns:
+            Path of the campaign file with `.zip` suffix.
+        """
+        campaigns = self.config.get_campaigns_dir()
+        path = campaigns / name
+        return path.with_suffix(path.suffix + ".zip")
+
+    def set_current_campaign(self, storage: CampaignStorage) -> None:
+        """Set curently selected campaign pointer to this file in the config.
+
+        Args:
+            storage: Campaign storage file that will be marked as current.
+        """
+        raise NotImplementedError
+
+    def get_campaign(
+        self, name: str | None = None, *, check_exists: bool = False
+    ) -> CampaignStorage:
+        """Get campaign file by name.
+
+        Args:
+            name: Name of the campaign. If `None`, current campaign is
+                returned instead (see `.get_current_campaign()`).
+            check_exists: Check if file is missing.
+
+        Raises:
+            CurrentCampaignNotSetError: If name is `None` and config is
+                missing `current-campaign` entry.
+            FileNotFoundError: If `check_exists` was specified and campaign
+                does not exist.
+        """
+        if name is None:
+            if self.config.current_campaign is None:
+                msg = (
+                    "Current configuration doesn't contain "
+                    "`current-campaign` key"
+                )
+                raise CurrentCampaignNotSetError(msg)
+
+            name = self.config.current_campaign
+
+        campaign = CampaignStorage(self.get_campaign_path(name))
+
+        if check_exists and not campaign.exists:
+            msg_0 = f"Campaign file {campaign} does not exist"
+            raise FileNotFoundError(msg_0)
+
+        return campaign
