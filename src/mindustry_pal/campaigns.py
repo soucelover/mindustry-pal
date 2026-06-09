@@ -203,6 +203,10 @@ class CampaignStorage:
         """Check if the storage file does exist."""
         return self.path.is_file()
 
+    def __str__(self) -> str:
+        """String representation of campaign file path."""
+        return str(self.path)
+
 
 class CampaignHelper:
     """A helper class for working with campaign files."""
@@ -236,19 +240,18 @@ class CampaignHelper:
             add_to_zip(zfile, base / "schematics/", base)
             add_to_zip(zfile, base / "settings.bin", base)
 
-    def get_current_campaign(
-        self, *, check_exists: bool = False
-    ) -> CampaignStorage:
-        """Get currently selected campaign storage file.
+    def get_campaign_path(self, name: str) -> Path:
+        """Get path of the campaign storage file by its name.
 
         Args:
-            check_exists: Check if file is missing.
+            name: Name of the campaign.
 
-        Raises:
-            CurrentCampaignNotSetError: If config is missing
-                `current-campaign` entry.
+        Returns:
+            Path of the campaign file with `.zip` suffix.
         """
-        raise NotImplementedError
+        campaigns = self.config.get_campaigns_dir()
+        path = campaigns / name
+        return path.with_suffix(path.suffix + ".zip")
 
     def set_current_campaign(self, storage: CampaignStorage) -> None:
         """Set curently selected campaign pointer to this file in the config.
@@ -265,7 +268,29 @@ class CampaignHelper:
 
         Args:
             name: Name of the campaign. If `None`, current campaign is
-                returned instead.
+                returned instead (see `.get_current_campaign()`).
             check_exists: Check if file is missing.
+
+        Raises:
+            CurrentCampaignNotSetError: If name is `None` and config is
+                missing `current-campaign` entry.
+            FileNotFoundError: If `check_exists` was specified and campaign
+                does not exist.
         """
-        raise NotImplementedError
+        if name is None:
+            if self.config.current_campaign is None:
+                msg = (
+                    "Current configuration doesn't contain "
+                    "`current-campaign` key"
+                )
+                raise CurrentCampaignNotSetError(msg)
+
+            name = self.config.current_campaign
+
+        campaign = CampaignStorage(self.get_campaign_path(name))
+
+        if check_exists and not campaign.exists:
+            msg_0 = f"Campaign file {campaign} does not exist"
+            raise FileNotFoundError(msg_0)
+
+        return campaign

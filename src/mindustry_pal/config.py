@@ -12,6 +12,9 @@ class PalConfig(BaseModel):
     versions_dir: DirectoryPath | None = Field(
         default=None, alias="versions-dir"
     )
+    campaigns_dir: DirectoryPath | None = Field(
+        default=None, alias="campaigns-dir"
+    )
     current_campaign: str | None = Field(
         default=None, alias="current-campaign"
     )
@@ -21,6 +24,12 @@ class PalConfig(BaseModel):
             return self.versions_dir
 
         return GAME_DATA_DIRECTORY / "versions"
+
+    def get_campaigns_dir(self) -> Path:
+        if self.campaigns_dir is not None:
+            return self.campaigns_dir
+
+        return PAL_DIRECTORY / "campaigns"
 
     model_config = ConfigDict(serialize_by_alias=True)
 
