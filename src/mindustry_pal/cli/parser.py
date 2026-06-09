@@ -1,5 +1,6 @@
 """Main `ArgumentParser` of the CLI."""
 
+import inspect
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Protocol
 
@@ -30,8 +31,9 @@ class SubParsersAction[ArgumentParserT: ArgumentParser](Protocol):
         self,
         name: str,
         *,
-        help: str | None = ...,  # noqa: A002
-        aliases: Sequence[str] = ...,
+        help: str | None = None,  # noqa: A002
+        aliases: Sequence[str] = (),
+        description: str | None = None,
     ) -> ArgumentParserT: ...
 
 
@@ -53,11 +55,20 @@ def add_command(
     Returns:
         A newly created parser of the command.
     """
+    description = inspect.getdoc(function)
+
+    if description is not None:
+        first_line = description.split("\n", maxsplit=1)[0]
+    else:
+        first_line = None
+
     if aliases is None:
-        parser = commands.add_parser(name, help=function.__doc__)
+        parser = commands.add_parser(
+            name, help=first_line, description=description
+        )
     else:
         parser = commands.add_parser(
-            name, help=function.__doc__, aliases=aliases
+            name, help=first_line, description=description, aliases=aliases
         )
 
     parser.set_defaults(command=function)
