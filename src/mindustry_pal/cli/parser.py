@@ -95,6 +95,13 @@ def register_commands(parser: ArgumentParser) -> None:
         action=BooleanOptionalAction,
         help="Override existing campaign file or raise error?",
     )
+    store_parser.add_argument(
+        "--current-campaign",
+        action="store_true",
+        help="Store to the latest chosen (current) campaign? If not "
+        "and name is not specified, you might be prompted to specify "
+        "a name for new campaign. Cannot be used with a name.",
+    )
 
     restore_parser = add_command(commands, "restore", restore)
     restore_parser.add_argument("name", nargs="?", help="Name of campaign")

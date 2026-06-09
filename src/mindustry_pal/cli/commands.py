@@ -45,15 +45,33 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
     """
     name: str | None = args.name
     exists_ok: bool | None = args.exists_ok
+    current_campaign: bool = args.current_campaign
+
+    if name is not None and current_campaign is True:
+        msg = "'--current-campaign' cannot be specified along with 'name'."
+        raise CommandError(msg)
 
     try:
         campaign = helper.get_campaign(name)
     except CurrentCampaignNotSetError as exc:
-        msg = (
-            "Campaign hasn't been stored before, so you have to "
-            "specify a name for a new campaign."
-        )
-        raise StoreCommandError(msg) from exc
+        if current_campaign is True:
+            msg = (
+                "Mindustry campaign hasn't been stored before, so you have "
+                "to specify a name for a new campaign."
+            )
+            raise StoreCommandError(msg) from exc
+
+        msg = dedent("""\
+            i Mindustry campaign hasn't been stored before, so we need to create
+              a new campaign storage.
+            ? How would you name it? Leave empty if you don't want to proceed.
+            > """)  # noqa: E501
+        name = input(msg)
+
+        if not name:
+            return
+
+        campaign = helper.get_campaign(name)
 
     if name is not None and not exists_ok and campaign.exists:
         if exists_ok is False:
@@ -67,10 +85,10 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
 
         if exists_ok is None:
             prompt = dedent(f"""\
-                i Campaign storage with name '{name}' already exists and thus
+                i Campaign storage with name '{name}' already exists and thereby
                   will be overwritten.
                 ? Do you want to proceed?
-                > [y/N] """)
+                > [y/N] """)  # noqa: E501
             proceed = prompt_yes_no(prompt, default=False)
 
             if proceed is False:
