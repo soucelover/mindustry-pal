@@ -1,14 +1,17 @@
 from argparse import ArgumentParser
-from typing import TYPE_CHECKING
-
-from mindustry_pal.config import load_config
-from mindustry_pal.errors import CommandError
-from mindustry_pal.logging import set_logging_level
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Protocol
 
 from .campaigns import create, restore, state, store, switch
+from .config import load_config
+from .errors import CommandError
+from .logging import set_logging_level
 
 if TYPE_CHECKING:
     from argparse import Namespace
+    from collections.abc import Sequence
+
+    from .config import PalConfig
 
 name = "manage.py"
 usage = None
@@ -16,27 +19,71 @@ description = "Manager made for mindustry game."
 epilog = "epi"
 
 
+class SubParsersAction[ArgumentParserT: ArgumentParser](Protocol):
+    """A protocol providing types of `argparse._SubParsersAction`."""
+
+    def add_parser(
+        self,
+        name: str,
+        *,
+        help: str | None = ...,  # noqa: A002
+        aliases: Sequence[str] = ...,
+    ) -> ArgumentParserT: ...
+
+
+type CommandFunction = Callable[[Namespace, PalConfig], None]
+
+
+def add_command(
+    commands: SubParsersAction[ArgumentParser],
+    name: str,
+    function: CommandFunction,
+    *,
+    aliases: Sequence[str] | None = None,
+) -> ArgumentParser:
+    """Register a single command in `SubParsersAction`.
+
+    Args:
+        commands: `ArgumentParser`'s action representing commands
+        name: Name for the command.
+        function: Function implementing command and containing its docstrings.
+        aliases: Optional list of aliases for the command.
+
+    Returns:
+        A newly created parser of the command.
+    """
+    if aliases is None:
+        parser = commands.add_parser(name, help=function.__doc__)
+    else:
+        parser = commands.add_parser(
+            name, help=function.__doc__, aliases=aliases
+        )
+
+    parser.set_defaults(command=function)
+    return parser
+
+
 def register_commands(parser: ArgumentParser) -> None:
+    """Register all CLI commands of Mindustry-Pal.
+
+    Args:
+        parser: Main argument parser.
+    """
     commands = parser.add_subparsers(metavar="command", required=True)
 
-    store_parser = commands.add_parser("store", help=store.__doc__)
+    store_parser = add_command(commands, "store", store)
     store_parser.add_argument("name", nargs="?", help="Name of campaign")
-    store_parser.set_defaults(command=store)
 
-    restore_parser = commands.add_parser("restore", help=store.__doc__)
+    restore_parser = add_command(commands, "restore", restore)
     restore_parser.add_argument("name", nargs="?", help="Name of campaign")
-    restore_parser.set_defaults(command=restore)
 
-    create_parser = commands.add_parser("create", help=create.__doc__)
+    create_parser = add_command(commands, "create", create)
     create_parser.add_argument("name", help="Name of new campaign")
-    create_parser.set_defaults(command=create)
 
-    switch_parser = commands.add_parser("switch", help=switch.__doc__)
+    switch_parser = add_command(commands, "switch", switch)
     switch_parser.add_argument("name")
-    switch_parser.set_defaults(command=switch)
 
-    state_parser = commands.add_parser("state", help=state.__doc__)
-    state_parser.set_defaults(command=state)
+    add_command(commands, "state", state)
 
 
 def process_logging_parameters(args: Namespace) -> None:
