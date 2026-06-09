@@ -1,7 +1,7 @@
 """Main `ArgumentParser` of the CLI."""
 
 import inspect
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 from typing import TYPE_CHECKING, Protocol
 
 from mindustry_pal.campaigns import create, restore, state, switch
@@ -84,7 +84,17 @@ def register_commands(parser: ArgumentParser) -> None:
     commands = parser.add_subparsers(metavar="command", required=True)
 
     store_parser = add_command(commands, "store", store_command)
-    store_parser.add_argument("name", nargs="?", help="Name of campaign")
+    store_parser.add_argument(
+        "name",
+        nargs="?",
+        help="Name of campaign. If not specified, "
+        "stores to the latest chosen campaign.",
+    )
+    store_parser.add_argument(
+        "--exists-ok",
+        action=BooleanOptionalAction,
+        help="Override existing campaign file or raise error?",
+    )
 
     restore_parser = add_command(commands, "restore", restore)
     restore_parser.add_argument("name", nargs="?", help="Name of campaign")
