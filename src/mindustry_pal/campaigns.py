@@ -182,6 +182,10 @@ def state(args: Namespace, config: PalConfig) -> None:
         logger.info(msg)
 
 
+class CurrentCampaignNotSetError(Exception):
+    """Current config is missing value for `current-campaign`."""
+
+
 @dataclass(slots=True, frozen=True)
 class CampaignStorage:
     """Dataclass representing campaign storage file."""
@@ -192,6 +196,11 @@ class CampaignStorage:
     def name(self) -> str:
         """Name of the campaign storage (name of the file)."""
         return self.path.stem
+
+    @property
+    def exists(self) -> bool:
+        """Check if the storage file does exist."""
+        return self.path.is_file()
 
 
 class CampaignHelper:
@@ -213,5 +222,39 @@ class CampaignHelper:
         Args:
             storage: A `.zip` storage file where current Mindustry
                 campaign gets stored to.
+        """
+        raise NotImplementedError
+
+    def get_current_campaign(
+        self, *, check_exists: bool = False
+    ) -> CampaignStorage:
+        """Get currently selected campaign storage file.
+
+        Args:
+            check_exists: Check if file is missing.
+
+        Raises:
+            CurrentCampaignNotSetError: If config is missing
+                `current-campaign` entry.
+        """
+        raise NotImplementedError
+
+    def set_current_campaign(self, storage: CampaignStorage) -> None:
+        """Set curently selected campaign pointer to this file in the config.
+
+        Args:
+            storage: Campaign storage file that will be marked as current.
+        """
+        raise NotImplementedError
+
+    def get_campaign(
+        self, name: str | None = None, *, check_exists: bool = False
+    ) -> CampaignStorage:
+        """Get campaign file by name.
+
+        Args:
+            name: Name of the campaign. If `None`, current campaign is
+                returned instead.
+            check_exists: Check if file is missing.
         """
         raise NotImplementedError
