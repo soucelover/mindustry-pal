@@ -1,19 +1,21 @@
 """Main `ArgumentParser` of the CLI."""
 
 from argparse import ArgumentParser
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Protocol
 
-from mindustry_pal.campaigns import create, restore, state, store, switch
-from mindustry_pal.cli.errors import CommandError
+from mindustry_pal.campaigns import create, restore, state, switch
+from mindustry_pal.cli.commands import store_command
 from mindustry_pal.config import load_config
 from mindustry_pal.logging import set_logging_level
+
+from .errors import CommandError
 
 if TYPE_CHECKING:
     from argparse import Namespace
     from collections.abc import Sequence
 
-    from mindustry_pal.config import PalConfig
+    from .base import CommandFunction
+
 
 name = "manage.py"
 usage = None
@@ -31,9 +33,6 @@ class SubParsersAction[ArgumentParserT: ArgumentParser](Protocol):
         help: str | None = ...,  # noqa: A002
         aliases: Sequence[str] = ...,
     ) -> ArgumentParserT: ...
-
-
-type CommandFunction = Callable[[Namespace, PalConfig], None]
 
 
 def add_command(
@@ -73,7 +72,7 @@ def register_commands(parser: ArgumentParser) -> None:
     """
     commands = parser.add_subparsers(metavar="command", required=True)
 
-    store_parser = add_command(commands, "store", store)
+    store_parser = add_command(commands, "store", store_command)
     store_parser.add_argument("name", nargs="?", help="Name of campaign")
 
     restore_parser = add_command(commands, "restore", restore)

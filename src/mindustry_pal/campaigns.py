@@ -25,34 +25,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def store(args: Namespace, config: PalConfig) -> None:
-    """Store current campaign"""
-    if args.name is None:
-        name = config.current_campaign
-
-        # 'name' is optional arg
-        # by default it is the current campaign
-        if name is None:
-            msg = (
-                "Failed to store current campaign: "
-                "for the first time you should specialize name"
-            )
-            raise CommandError(msg)
-    else:
-        name = args.name
-
-    dst = resolve_path(Path(name))
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.touch()
-
-    with zipfile.ZipFile(dst, "w") as zfile:
-        store_to_zip(zfile)
-
-    config.current_campaign = dst.name
-    dump_config(config)
-    logger.info("Successfully stored campaign.")
-
-
 def restore(args: Namespace, config: PalConfig) -> None:
     """Restore campaign"""
     if args.name is None:
