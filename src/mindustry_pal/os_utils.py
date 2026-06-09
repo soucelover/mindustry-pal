@@ -43,4 +43,4 @@ def get_pal_directory() -> Path:
 
 
 GAME_DATA_DIRECTORY = get_game_data_directory()
-PAL_DIRECTORY = get_game_data_directory()
+PAL_DIRECTORY = get_pal_directory()
