@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .cli import CommandError
-from .config import dump_config
 from .files import (
     add_to_zip,
     clear_folder,
@@ -47,7 +46,6 @@ def restore(args: Namespace, config: PalConfig) -> None:
         restore_zip(zrestore)
 
     config.current_campaign = restore.name
-    dump_config(config)
     logger.info("Successfully stored campaign.")
 
 
@@ -83,7 +81,6 @@ def create(args: Namespace, config: PalConfig) -> None:
 
     clear_folder(GAME_DATA_DIRECTORY)
     config.current_campaign = new.name
-    dump_config(config)
     logger.info("Successfully created new campaign.")
 
 
@@ -122,7 +119,6 @@ def switch(args: Namespace, config: PalConfig) -> None:
         restore_zip(zrestore)
 
     config.current_campaign = restore.name
-    dump_config(config)
     logger.info("Successfully switched current campaign to %s.", restore.name)
 
 
@@ -231,7 +227,10 @@ class CampaignHelper:
         Args:
             storage: Campaign storage file that will be marked as current.
         """
-        raise NotImplementedError
+        self.config.current_campaign = storage.path.name
+        logger.debug(
+            "Changed current campaign to %r", self.config.current_campaign
+        )
 
     def get_campaign(
         self, name: str | None = None, *, check_exists: bool = False
