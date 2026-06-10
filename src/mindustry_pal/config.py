@@ -72,7 +72,7 @@ class PalConfig(ChangeDetectionMixin):
                 changed. Otherwise saves regardless of configuration
                 or file state.
         """
-        if if_changed is True and self.model_has_changed:
+        if if_changed is True and not self.model_has_changed:
             logger.debug(
                 "Skipped saving configuration: it hasn't changed in this run"
             )
