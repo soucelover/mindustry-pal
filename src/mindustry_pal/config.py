@@ -61,22 +61,3 @@ class PalConfig(BaseModel):
 
         content = self.model_dump_json(indent=4, exclude_unset=True)
         self.config_file.write_text(content, encoding="utf-8")
-
-
-def load_config() -> PalConfig:
-    config_file = PAL_DIRECTORY / "config.json"
-
-    if not config_file.is_file():
-        return PalConfig()
-
-    return PalConfig.model_validate_json(
-        config_file.read_text(encoding="utf-8")
-    )
-
-
-def dump_config(config: PalConfig) -> None:
-    config_file = PAL_DIRECTORY / "config.json"
-    config_file.parent.mkdir(parents=True, exist_ok=True)
-
-    content = config.model_dump_json()
-    config_file.write_text(content, encoding="utf-8")
