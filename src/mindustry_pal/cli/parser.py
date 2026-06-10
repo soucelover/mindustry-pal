@@ -139,3 +139,5 @@ def cli(args: list[str] | None = None) -> None:
         parsed.command(parsed, config)
     except CommandError as exc:
         exc.log()
+    else:
+        config.save(if_changed=True)

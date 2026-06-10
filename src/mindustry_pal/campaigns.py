@@ -46,7 +46,6 @@ def restore(args: Namespace, config: PalConfig) -> None:
         restore_zip(zrestore)
 
     config.current_campaign = restore.name
-    config.save()
     logger.info("Successfully stored campaign.")
 
 
@@ -82,7 +81,6 @@ def create(args: Namespace, config: PalConfig) -> None:
 
     clear_folder(GAME_DATA_DIRECTORY)
     config.current_campaign = new.name
-    config.save()
     logger.info("Successfully created new campaign.")
 
 
@@ -121,7 +119,6 @@ def switch(args: Namespace, config: PalConfig) -> None:
         restore_zip(zrestore)
 
     config.current_campaign = restore.name
-    config.save()
     logger.info("Successfully switched current campaign to %s.", restore.name)
 
 
