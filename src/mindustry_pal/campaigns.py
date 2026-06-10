@@ -227,7 +227,10 @@ class CampaignHelper:
         Args:
             storage: Campaign storage file that will be marked as current.
         """
-        raise NotImplementedError
+        self.config.current_campaign = storage.path.name
+        logger.debug(
+            "Changed current campaign to %r", self.config.current_campaign
+        )
 
     def get_campaign(
         self, name: str | None = None, *, check_exists: bool = False
