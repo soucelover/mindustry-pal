@@ -3,12 +3,13 @@
 from pathlib import Path
 from typing import ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, DirectoryPath, Field
+from pydantic import ConfigDict, DirectoryPath, Field
+from pydantic_changedetect import ChangeDetectionMixin
 
 from mindustry_pal.os_utils import GAME_DATA_DIRECTORY, PAL_DIRECTORY
 
 
-class PalConfig(BaseModel):
+class PalConfig(ChangeDetectionMixin):
     """Mindustry-Pal configuration class."""
 
     versions_dir: DirectoryPath | None = Field(
@@ -54,8 +55,17 @@ class PalConfig(BaseModel):
         content = cls.config_file.read_text(encoding="utf-8")
         return cls.model_validate_json(content)
 
-    def save(self) -> None:
-        """Save current configuration to a file."""
+    def save(self, *, if_changed: bool = True) -> None:
+        """Save current configuration to a file.
+
+        Args:
+            if_changed: If true, then saves only if configuration was
+                changed. Otherwise saves regardless of configuration
+                or file state.
+        """
+        if if_changed is True and self.model_has_changed:
+            return
+
         self.config_file.parent.mkdir(parents=True, exist_ok=True)
         self.config_file.touch()
 
