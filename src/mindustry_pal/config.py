@@ -16,13 +16,17 @@ class PalConfig(ChangeDetectionMixin):
     """Mindustry-Pal configuration class."""
 
     versions_dir: DirectoryPath | None = Field(
-        default=None, alias="versions-dir"
+        default=None, alias="versions-dir", serialization_alias="versions-dir"
     )
     campaigns_dir: DirectoryPath | None = Field(
-        default=None, alias="campaigns-dir"
+        default=None,
+        alias="campaigns-dir",
+        serialization_alias="campaigns-dir",
     )
     current_campaign: str | None = Field(
-        default=None, alias="current-campaign"
+        default=None,
+        alias="current-campaign",
+        serialization_alias="current-campaign",
     )
 
     def get_versions_dir(self) -> Path:
