@@ -129,23 +129,47 @@ class RestoreCommandError(CommandError):
 def restore_command(args: Namespace, helper: CampaignHelper) -> None:
     """Restore (load) Mindustry campaign from a file.
 
-    Replaces current files with those from stored Mindustry campaign.
+    Replaces current campaign files with those from stored Mindustry
+    campaign. All other game files (e.g., screenshots) are left untouched.
     """
     name: str | None = args.name
+    take_yes: bool = args.yes
 
     try:
-        campaign = helper.get_campaign(name)
-        # TODO(@soucelover): Add check_exists=True
+        campaign = helper.get_campaign(name, check_exists=True)
     except CurrentCampaignNotSetError as exc:
-        msg = (
-            "Campaign hasn't been stored before, so you have to "
-            "specify a name or store current campaign first."
-        )
+        msg = dedent("""\
+            Campaign hasn't been stored yet.
+            Use `mindustry-pal store` to store current campaign to a file. Or
+            specify a name of the campaign like this:
+
+                mindustry-pal restore <name>
+        """)
         raise RestoreCommandError(msg) from exc
+    except CampaignDoesntExistError as exc:
+        msg = f"Campaign '{exc.campaign.name}' doesn't exist"
+        raise RestoreCommandError(msg) from exc
+
+    if not take_yes:
+        prompt = dedent(f"""\
+            i This operation will override your current Mindustry campaign files
+              with those from '{campaign.name}'
+
+                Size: {campaign.size_str}
+                Last modified: {campaign.timestamp}
+
+            ? Do you want to proceed?
+              Tip: Use option '--yes' to suppress this prompt.
+
+            > [Y/n] """)  # noqa: E501
+        proceed = prompt_yes_no(prompt, default=True)
+
+        if proceed is False:
+            return
 
     helper.restore(campaign)
     helper.set_current_campaign(campaign)
-    logger.info("Successfully restored campaign from the file.")
+    logger.info("Successfully restored campaign '%s'.", campaign.name)
 
 
 class CreateCommandError(CommandError):

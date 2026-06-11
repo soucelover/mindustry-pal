@@ -119,6 +119,13 @@ def register_commands(parser: ArgumentParser) -> None:
     restore_parser.add_argument(
         "name", nargs="?", help="Optional name of the campaign being restored"
     )
+    restore_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Automatically answer yes on prompt "
+        "'Do you want to override ...?'",
+    )
 
     create_parser = add_command(commands, "create", create_command)
     create_parser.add_argument(
