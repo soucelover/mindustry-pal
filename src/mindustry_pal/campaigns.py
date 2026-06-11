@@ -5,14 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
-from .cli import CommandError
-from .files import (
-    add_to_zip,
-    resolve_path,
-    restore_from_zip,
-    restore_zip,
-    store_to_zip,
-)
+from .files import add_to_zip, restore_from_zip
 from .os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
@@ -22,44 +15,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-def switch(args: Namespace, config: PalConfig) -> None:
-    """Switch mindustry copaign"""
-    err_msg_prefix = "Failed to switch mindustry campaign"
-
-    if config.current_campaign is None:
-        msg = (
-            f"{err_msg_prefix}: "
-            "you must store current campaign before switching to another"
-        )
-        raise CommandError(msg)
-
-    current = resolve_path(Path(config.current_campaign))
-    restore = resolve_path(Path(args.name))
-
-    if current == restore:
-        msg_0 = (
-            f"{err_msg_prefix}: "
-            "you must switch to another campaign, not current"
-        )
-        raise CommandError(msg_0)
-
-    if not restore.exists():
-        msg_1 = f"{err_msg_prefix}: campaign {args.name} doesn't exist"
-        raise CommandError(msg_1)
-
-    current.parent.mkdir(parents=True, exist_ok=True)
-    current.touch()
-
-    with zipfile.ZipFile(current, "w") as zstore:
-        store_to_zip(zstore)
-
-    with zipfile.ZipFile(restore, "r") as zrestore:
-        restore_zip(zrestore)
-
-    config.current_campaign = restore.name
-    logger.info("Successfully switched current campaign to %s.", restore.name)
 
 
 def state(args: Namespace, config: PalConfig) -> None:

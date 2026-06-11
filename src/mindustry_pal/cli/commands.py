@@ -63,6 +63,7 @@ def restore_command(args: Namespace, helper: CampaignHelper) -> None:
 
     try:
         campaign = helper.get_campaign(name)
+        # TODO(@soucelover): Add check_exists=True
     except CurrentCampaignNotSetError as exc:
         msg = (
             "Campaign hasn't been stored before, so you have to "
@@ -110,3 +111,44 @@ def create_command(args: Namespace, helper: CampaignHelper) -> None:
     helper.set_current_campaign(new_campaign)
     logger.info("Successfully created new empty campaign and switched to it.")
     logger.info("  Path: %s", new_campaign)
+
+
+class SwitchCommandError(CommandError):
+    """Error during `switch` command."""
+
+    @override
+    def format_message(self) -> str:
+        return f"Failed to switch to another campaign: {self!s}"
+
+
+@campaign_dependency
+def switch_command(args: Namespace, helper: CampaignHelper) -> None:
+    """Switch between Mindustry campaigns."""
+    name: str = args.name
+
+    try:
+        current_campaign = helper.get_campaign()
+    except CurrentCampaignNotSetError as exc:
+        msg = "You must store current campaign before switching to another."
+        raise SwitchCommandError(msg) from exc
+
+    try:
+        restore_campaign = helper.get_campaign(name, check_exists=True)
+    except FileNotFoundError as exc:
+        msg = f"Campaign file for {name} doesn't exist on disk"
+        raise SwitchCommandError(msg) from exc
+
+    if restore_campaign == current_campaign:
+        logger.info("Already on campaign %s", current_campaign.name)
+        return
+
+    helper.store(current_campaign)
+    logger.info(
+        "Current campaign (%s) was stored to a file", current_campaign.name
+    )
+
+    helper.restore(restore_campaign)
+    helper.set_current_campaign(restore_campaign)
+    logger.info(
+        "Successfully switched to campaign %s.", restore_campaign.name
+    )
