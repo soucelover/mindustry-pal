@@ -219,28 +219,53 @@ class SwitchCommandError(CommandError):
 
 @campaign_dependency
 def switch_command(args: Namespace, helper: CampaignHelper) -> None:
-    """Switch between Mindustry campaigns."""
+    """Switch between Mindustry campaigns.
+
+    Stores your current progress in Mindustry to a campaign storage and
+    then switches to the specified campaign. Current campaign files get
+    overriden. All other game files (e.g., screenshots) stay untouched.
+    """
     name: str = args.name
+    from_current_campaign: bool = args.from_current_campaign
 
     try:
         current_campaign = helper.get_campaign()
     except CurrentCampaignNotSetError as exc:
-        msg = "You must store current campaign before switching to another."
-        raise SwitchCommandError(msg) from exc
+        if from_current_campaign is True:
+            msg = dedent("""\
+                You must store current campaign
+                before switching to another.
+            """)
+            raise SwitchCommandError(msg) from exc
+
+        msg = dedent("""\
+            i Mindustry campaign hasn't been stored before, so we need to create
+              a new campaign storage to save your current progress.
+            ? How would you name it? Leave empty if you don't want to proceed.
+            > """)  # noqa: E501
+        name = input(msg)
+
+        if not name:
+            return
+
+        current_campaign = helper.get_campaign(name)
 
     try:
         restore_campaign = helper.get_campaign(name, check_exists=True)
     except CampaignDoesntExistError as exc:
-        msg = f"Campaign file for {exc.campaign.name} doesn't exist on disk"
+        msg = f"Campaign file for '{exc.campaign.name}' doesn't exist on disk"
         raise SwitchCommandError(msg) from exc
 
     if restore_campaign == current_campaign:
         logger.info("Already on campaign '%s'", current_campaign.name)
         return
 
-    helper.store(current_campaign)
+    result = helper.store(current_campaign)
     logger.info(
-        "Current campaign (%s) was stored to a file", current_campaign.name
+        "Current campaign (%s) was stored in %s file with size %s.",
+        current_campaign.name,
+        ("the existing", "a new")[result],
+        current_campaign.size_str,
     )
 
     helper.restore(restore_campaign)

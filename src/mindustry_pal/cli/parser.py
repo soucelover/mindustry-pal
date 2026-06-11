@@ -108,6 +108,7 @@ def register_commands(parser: ArgumentParser) -> None:
         help="Override existing campaign file or raise error?",
     )
     store_parser.add_argument(
+        "-c",
         "--current-campaign",
         action="store_true",
         help="Store to the latest chosen (current) campaign? If not "
@@ -134,6 +135,14 @@ def register_commands(parser: ArgumentParser) -> None:
 
     switch_parser = add_command(commands, "switch", switch_command)
     switch_parser.add_argument("name", help="Name of campaign to switch to")
+    switch_parser.add_argument(
+        "-c",
+        "--from-current-campaign",
+        action="store_true",
+        help="Switch from current campaign file? If not and current "
+        "campaign wasn't stored before, you will be prompted to specify "
+        "a name for new campaign where current files will be stored.",
+    )
 
     add_command(commands, "status", status_command)
     add_command(commands, "list", list_command)
