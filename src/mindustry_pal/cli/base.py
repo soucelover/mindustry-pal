@@ -5,8 +5,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import overload
 
-from mindustry_pal.campaigns import CampaignHelper
-from mindustry_pal.config import PalConfig
+from mindustry_pal import CampaignHelper, PalConfig
 
 YES_ANSWERS = ("Y", "YES")
 NO_ANSWERS = ("N", "NO")
