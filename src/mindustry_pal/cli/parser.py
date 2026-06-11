@@ -1,9 +1,10 @@
 """Main `ArgumentParser` of the CLI."""
 
 import inspect
-from argparse import ArgumentParser
-from typing import TYPE_CHECKING, Protocol
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from typing import TYPE_CHECKING
 
+import mindustry_pal
 from mindustry_pal.campaigns import create, restore, state, switch
 from mindustry_pal.config import PalConfig
 from mindustry_pal.logging import set_logging_level
@@ -12,37 +13,41 @@ from .commands import store_command
 from .errors import CommandError
 
 if TYPE_CHECKING:
-    from argparse import Namespace
+    from argparse import (
+        Namespace,
+        _SubParsersAction,  # pyright: ignore[reportPrivateUsage]
+    )
     from collections.abc import Sequence
 
     from .base import CommandFunction
 
 
-name = "manage.py"
-usage = None
-description = "Manager made for mindustry game."
-epilog = "epi"
+def get_docs_header(obj: object) -> tuple[str, str] | tuple[None, None]:
+    """Get header of object's docstring.
+
+    Args:
+        obj: Source of docstring.
+
+    Returns:
+        The first line of the dosctring and an original docstring itself.
+    """
+    docs = inspect.getdoc(obj)
+
+    if docs is None:
+        return None, None
+
+    header, _, _body = docs.partition("\n")
+    return header, docs
 
 
-class SubParsersAction[ArgumentParserT: ArgumentParser](Protocol):
-    """A protocol providing types of `argparse._SubParsersAction`."""
-
-    def add_parser(
-        self,
-        name: str,
-        *,
-        help: str | None = None,  # noqa: A002
-        aliases: Sequence[str] = (),
-        description: str | None = None,
-    ) -> ArgumentParserT: ...
-
-
-def add_command(
-    commands: SubParsersAction[ArgumentParser],
+def add_command(  # noqa: PLR0913
+    commands: _SubParsersAction[ArgumentParser],
     name: str,
     function: CommandFunction,
     *,
-    aliases: Sequence[str] | None = None,
+    help: str | None = None,  # noqa: A002
+    epilog: str | None = None,
+    aliases: Sequence[str] = (),
 ) -> ArgumentParser:
     """Register a single command in `SubParsersAction`.
 
@@ -55,22 +60,19 @@ def add_command(
     Returns:
         A newly created parser of the command.
     """
-    description = inspect.getdoc(function)
+    header, docs = get_docs_header(function)
 
-    if description is not None:
-        first_line = description.split("\n", maxsplit=1)[0]
-    else:
-        first_line = None
+    if help is None:
+        help = header  # noqa: A001
 
-    if aliases is None:
-        parser = commands.add_parser(
-            name, help=first_line, description=description
-        )
-    else:
-        parser = commands.add_parser(
-            name, help=first_line, description=description, aliases=aliases
-        )
-
+    parser = commands.add_parser(
+        name,
+        help=help,
+        description=docs,
+        epilog=epilog,
+        aliases=aliases,
+        formatter_class=RawDescriptionHelpFormatter,
+    )
     parser.set_defaults(command=function)
     return parser
 
@@ -110,7 +112,10 @@ def process_logging_parameters(args: Namespace) -> None:
 
 
 def cli(args: list[str] | None = None) -> None:
-    parser = ArgumentParser(name, usage, description, epilog)
+    body = inspect.getdoc(mindustry_pal)
+    parser = ArgumentParser(
+        description=body, formatter_class=RawDescriptionHelpFormatter
+    )
     parser.add_argument(
         "-q",
         "--quiet",
