@@ -145,6 +145,12 @@ def cli(args: list[str] | None = None) -> None:
         dest="verbosity",
         help="Use verbose output",
     )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"Mindustry-Pal {mindustry_pal.__version__}",
+    )
 
     register_commands(parser)
 
