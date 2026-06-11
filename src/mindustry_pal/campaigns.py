@@ -15,6 +15,12 @@ if TYPE_CHECKING:
     from .config import PalConfig
 
 
+__all__ = [
+    "CampaignDoesntExistError",
+    "CampaignHelper",
+    "CampaignStorage",
+    "CurrentCampaignNotSetError",
+]
 logger = logging.getLogger(__name__)
 
 
@@ -56,7 +62,7 @@ class CampaignStorage:
         return str(self.path)
 
 
-class CampaignDoesnExistError(Exception):
+class CampaignDoesntExistError(Exception):
     """Selected campaign doesn't exist on dsk."""
 
     campaign: CampaignStorage
@@ -208,7 +214,7 @@ class CampaignHelper:
 
         if check_exists and not campaign.exists:
             msg = f"Campaign file {campaign} does not exist"
-            raise CampaignDoesnExistError(msg, campaign=campaign)
+            raise CampaignDoesntExistError(msg, campaign=campaign)
 
         return campaign
 

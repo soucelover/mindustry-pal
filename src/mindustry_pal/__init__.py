@@ -2,7 +2,25 @@
 
 from importlib import metadata
 
-__all__ = ["__version__"]
+from .campaigns import (
+    CampaignDoesntExistError,
+    CampaignHelper,
+    CampaignStorage,
+    CurrentCampaignNotSetError,
+)
+from .config import PalConfig
+from .os_utils import GAME_DATA_DIRECTORY, PAL_DIRECTORY
+
+__all__ = [
+    "GAME_DATA_DIRECTORY",
+    "PAL_DIRECTORY",
+    "CampaignDoesntExistError",
+    "CampaignHelper",
+    "CampaignStorage",
+    "CurrentCampaignNotSetError",
+    "PalConfig",
+    "__version__",
+]
 PACKAGE_NAME = "mindustry-pal"
 
 try:

@@ -5,7 +5,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from typing import TYPE_CHECKING
 
 import mindustry_pal
-from mindustry_pal.config import PalConfig
+from mindustry_pal import PalConfig
 from mindustry_pal.logging import set_logging_level
 
 from .commands import (

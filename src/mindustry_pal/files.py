@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     import zipfile
 
 
+__all__ = ["add_to_zip", "get_file_size_string", "restore_from_zip"]
 logger = logging.getLogger(__name__)
 
 
