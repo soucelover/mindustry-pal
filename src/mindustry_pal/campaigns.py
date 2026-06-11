@@ -2,7 +2,7 @@ import logging
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, override
 
 from mindustry_pal.files import get_file_size_string
 
@@ -57,8 +57,19 @@ class CampaignStorage:
 
         return mtime.strftime("%c")
 
+    @override
+    def __eq__(self, another: object) -> bool:
+        if not isinstance(another, CampaignStorage):
+            return NotImplemented
+
+        return self.path.resolve() == another.path.resolve()
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.path)
+
+    @override
     def __str__(self) -> str:
-        """String representation of campaign file path."""
         return str(self.path)
 
 
@@ -110,16 +121,23 @@ class CampaignHelper:
 
         logger.debug("Created empty campaign at %s", storage)
 
-    def store(self, storage: CampaignStorage) -> None:
+    def store(self, storage: CampaignStorage) -> bool:
         """Store current campaign to `storage`.
 
         Args:
             storage: A `.zip` storage file where current Mindustry
                 campaign gets stored to.
+
+        Returns:
+            True if new file was created, False if file was overriden.
         """
         dst = storage.path
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.touch()
+        exists = dst.is_file()
+
+        if not exists:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.touch()
+
         base = GAME_DATA_DIRECTORY
 
         with zipfile.ZipFile(dst, "w") as zfile:
@@ -127,6 +145,7 @@ class CampaignHelper:
                 add_to_zip(zfile, base / member, base)
 
         logger.debug("Stored campaign to %s", storage)
+        return not exists
 
     def restore(self, storage: CampaignStorage) -> None:
         """Restore Mindustry campaign from a `storage`.

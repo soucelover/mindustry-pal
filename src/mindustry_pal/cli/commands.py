@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, override
 
 from mindustry_pal import CampaignDoesntExistError, CurrentCampaignNotSetError
+from mindustry_pal.cli.base import prompt_yes_no
 
 from .base import campaign_dependency
 from .errors import CommandError
@@ -28,22 +29,92 @@ class StoreCommandError(CommandError):
 
 @campaign_dependency
 def store_command(args: Namespace, helper: CampaignHelper) -> None:
-    """Store (dump) current Mindustry campaign in a file."""
+    """Store (dump) current Mindustry campaign in a file.
+
+    Stores the following files and folders from current Mindustry campaign:
+
+     *  saves/
+     *  mods/
+     *  maps/
+     *  schematics/
+     *  settings.bin
+
+    Campaign gets stored inside application folder.
+
+    If corresponding options were not specified and your attention is
+    required, you will be prompted. Otherwise, command proceeds without
+    terminal interactions.
+    """
     name: str | None = args.name
+    exists_ok: bool | None = args.exists_ok
+    current_campaign: bool = args.current_campaign
+
+    if name is not None and current_campaign is True:
+        msg = "'--current-campaign' cannot be specified along with 'name'."
+        raise CommandError(msg)
 
     try:
         campaign = helper.get_campaign(name)
     except CurrentCampaignNotSetError as exc:
-        msg = (
-            "Campaign hasn't been stored before, so you have to "
-            "specify a name for a new campaign."
-        )
-        raise StoreCommandError(msg) from exc
+        if current_campaign is True:
+            msg = dedent("""\
+                Mindustry campaign
+                hasn't been stored before, so you have to specify a name for a new
+                campaign.
 
-    helper.store(campaign)
+                Tip: This error is shown because you've specified '--current-campaign'.
+            """)  # noqa: E501
+            raise StoreCommandError(msg) from exc
+
+        msg = dedent("""\
+            i Mindustry campaign hasn't been stored before, so we need to create
+              a new campaign storage.
+            ? How would you name it? Leave empty if you don't want to proceed.
+            > """)  # noqa: E501
+        name = input(msg)
+
+        if not name:
+            return
+
+        campaign = helper.get_campaign(name)
+
+    if name is not None and not exists_ok and campaign.exists:
+        if exists_ok is False:
+            msg = dedent(f"""\
+                Campaign storage
+                with name '{name}' already exists.
+
+                Tip: This error is shown because you've specified '--no-exists-ok'.
+            """)  # noqa: E501
+            raise StoreCommandError(msg)
+
+        if exists_ok is None:
+            prompt = dedent(f"""\
+                i Campaign storage with name '{name}' already exists and thereby
+                  will be overwritten.
+                ? Do you want to proceed?
+                > [y/N] """)  # noqa: E501
+            proceed = prompt_yes_no(prompt, default=False)
+
+            if proceed is False:
+                return
+
+    result = helper.store(campaign)
     helper.set_current_campaign(campaign)
-    logger.info("Successfully stored campaign in a file.")
-    logger.info("  Path: %s", campaign)
+
+    msg = dedent("""\
+        Successfully stored campaign '%s' in %s file.
+
+          Path: %s
+          Size: %s
+    """)
+    logger.info(
+        msg,
+        campaign.name,
+        ("the existing", "a new")[result],
+        campaign,
+        campaign.size_str,
+    )
 
 
 class RestoreCommandError(CommandError):
@@ -58,23 +129,47 @@ class RestoreCommandError(CommandError):
 def restore_command(args: Namespace, helper: CampaignHelper) -> None:
     """Restore (load) Mindustry campaign from a file.
 
-    Replaces current files with those from stored Mindustry campaign.
+    Replaces current campaign files with those from stored Mindustry
+    campaign. All other game files (e.g., screenshots) are left untouched.
     """
     name: str | None = args.name
+    take_yes: bool = args.yes
 
     try:
-        campaign = helper.get_campaign(name)
-        # TODO(@soucelover): Add check_exists=True
+        campaign = helper.get_campaign(name, check_exists=True)
     except CurrentCampaignNotSetError as exc:
-        msg = (
-            "Campaign hasn't been stored before, so you have to "
-            "specify a name or store current campaign first."
-        )
+        msg = dedent("""\
+            Campaign hasn't been stored yet.
+            Use `mindustry-pal store` to store current campaign to a file. Or
+            specify a name of the campaign like this:
+
+                mindustry-pal restore <name>
+        """)
         raise RestoreCommandError(msg) from exc
+    except CampaignDoesntExistError as exc:
+        msg = f"Campaign '{exc.campaign.name}' doesn't exist"
+        raise RestoreCommandError(msg) from exc
+
+    if not take_yes:
+        prompt = dedent(f"""\
+            i This operation will override your current Mindustry campaign files
+              with those from '{campaign.name}'
+
+                Size: {campaign.size_str}
+                Last modified: {campaign.timestamp}
+
+            ? Do you want to proceed?
+              Tip: Use option '--yes' to suppress this prompt.
+
+            > [Y/n] """)  # noqa: E501
+        proceed = prompt_yes_no(prompt, default=True)
+
+        if proceed is False:
+            return
 
     helper.restore(campaign)
     helper.set_current_campaign(campaign)
-    logger.info("Successfully restored campaign from the file.")
+    logger.info("Successfully restored campaign '%s'.", campaign.name)
 
 
 class CreateCommandError(CommandError):
@@ -124,28 +219,53 @@ class SwitchCommandError(CommandError):
 
 @campaign_dependency
 def switch_command(args: Namespace, helper: CampaignHelper) -> None:
-    """Switch between Mindustry campaigns."""
+    """Switch between Mindustry campaigns.
+
+    Stores your current progress in Mindustry to a campaign storage and
+    then switches to the specified campaign. Current campaign files get
+    overriden. All other game files (e.g., screenshots) stay untouched.
+    """
     name: str = args.name
+    from_current_campaign: bool = args.from_current_campaign
 
     try:
         current_campaign = helper.get_campaign()
     except CurrentCampaignNotSetError as exc:
-        msg = "You must store current campaign before switching to another."
-        raise SwitchCommandError(msg) from exc
+        if from_current_campaign is True:
+            msg = dedent("""\
+                You must store current campaign
+                before switching to another.
+            """)
+            raise SwitchCommandError(msg) from exc
+
+        msg = dedent("""\
+            i Mindustry campaign hasn't been stored before, so we need to create
+              a new campaign storage to save your current progress.
+            ? How would you name it? Leave empty if you don't want to proceed.
+            > """)  # noqa: E501
+        name = input(msg)
+
+        if not name:
+            return
+
+        current_campaign = helper.get_campaign(name)
 
     try:
         restore_campaign = helper.get_campaign(name, check_exists=True)
     except CampaignDoesntExistError as exc:
-        msg = f"Campaign file for {exc.campaign.name} doesn't exist on disk"
+        msg = f"Campaign file for '{exc.campaign.name}' doesn't exist on disk"
         raise SwitchCommandError(msg) from exc
 
     if restore_campaign == current_campaign:
         logger.info("Already on campaign '%s'", current_campaign.name)
         return
 
-    helper.store(current_campaign)
+    result = helper.store(current_campaign)
     logger.info(
-        "Current campaign (%s) was stored to a file", current_campaign.name
+        "Current campaign (%s) was stored in %s file with size %s.",
+        current_campaign.name,
+        ("the existing", "a new")[result],
+        current_campaign.size_str,
     )
 
     helper.restore(restore_campaign)

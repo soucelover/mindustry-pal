@@ -1,7 +1,11 @@
 """Main `ArgumentParser` of the CLI."""
 
 import inspect
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from argparse import (
+    ArgumentParser,
+    BooleanOptionalAction,
+    RawDescriptionHelpFormatter,
+)
 from typing import TYPE_CHECKING
 
 import mindustry_pal
@@ -93,12 +97,35 @@ def register_commands(parser: ArgumentParser) -> None:
 
     store_parser = add_command(commands, "store", store_command)
     store_parser.add_argument(
-        "name", nargs="?", help="Optional name of a campaign to store to"
+        "name",
+        nargs="?",
+        help="Optional name of a campaign to store to. If not specified, "
+        "stores to the latest chosen campaign.",
+    )
+    store_parser.add_argument(
+        "--exists-ok",
+        action=BooleanOptionalAction,
+        help="Override existing campaign file or raise error?",
+    )
+    store_parser.add_argument(
+        "-c",
+        "--current-campaign",
+        action="store_true",
+        help="Store to the latest chosen (current) campaign? If not "
+        "and name is not specified, you might be prompted to specify "
+        "a name for new campaign. Cannot be used with a name.",
     )
 
     restore_parser = add_command(commands, "restore", restore_command)
     restore_parser.add_argument(
         "name", nargs="?", help="Optional name of the campaign being restored"
+    )
+    restore_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Automatically answer yes on prompt "
+        "'Do you want to override ...?'",
     )
 
     create_parser = add_command(commands, "create", create_command)
@@ -108,6 +135,14 @@ def register_commands(parser: ArgumentParser) -> None:
 
     switch_parser = add_command(commands, "switch", switch_command)
     switch_parser.add_argument("name", help="Name of campaign to switch to")
+    switch_parser.add_argument(
+        "-c",
+        "--from-current-campaign",
+        action="store_true",
+        help="Switch from current campaign file? If not and current "
+        "campaign wasn't stored before, you will be prompted to specify "
+        "a name for new campaign where current files will be stored.",
+    )
 
     add_command(commands, "status", status_command)
     add_command(commands, "list", list_command)
