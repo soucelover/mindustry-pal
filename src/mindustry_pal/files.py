@@ -1,62 +1,27 @@
+import logging
 import os
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mindustry_pal.os_utils import GAME_DATA_DIRECTORY
-
 if TYPE_CHECKING:
     import zipfile
-    from collections.abc import Iterator
 
 
-def resolve_path(path: Path) -> Path:
-    if not path.is_absolute():
-        path = Path("campaigns") / path
-
-    if path.suffix != ".zip":
-        path = path.with_suffix(path.suffix + ".zip")
-
-    return path.resolve()
+logger = logging.getLogger(__name__)
 
 
-def clear_folder(folder: Path) -> None:
+def _clear_folder(folder: Path) -> None:
+    """Remove all entries inside directory and leave it empty.
+
+    Args:
+        folder: Path to the folder.
+    """
     for path in folder.iterdir():
         if path.is_dir():
             shutil.rmtree(path)
         else:
             path.unlink()
-
-
-@dataclass(slots=True)
-class _StoreToZipFrame:
-    def __init__(self, iterable: Iterator[Path]) -> None:
-        self.iterable = iterable
-
-    iterable: Iterator[Path]
-    file: Path
-
-
-def store_to_zip(zfile: zipfile.ZipFile) -> None:
-    stack = [_StoreToZipFrame(GAME_DATA_DIRECTORY.iterdir())]
-
-    while stack:
-        last = stack[-1]
-
-        try:
-            last.file = next(last.iterable)
-        except StopIteration:
-            del stack[-1]
-            continue
-
-        if last.file.is_dir():
-            stack.append(_StoreToZipFrame(last.file.iterdir()))
-            zfile.mkdir(str(last.file.relative_to(GAME_DATA_DIRECTORY)))
-        else:
-            zfile.write(
-                last.file, str(last.file.relative_to(GAME_DATA_DIRECTORY))
-            )
 
 
 def add_to_zip(zfile: zipfile.ZipFile, entry: Path, base: Path) -> None:
@@ -83,6 +48,67 @@ def add_to_zip(zfile: zipfile.ZipFile, entry: Path, base: Path) -> None:
                 zfile.write(filepath, filepath.relative_to(base))
 
 
-def restore_zip(zrestore: zipfile.ZipFile) -> None:
-    clear_folder(GAME_DATA_DIRECTORY)
-    zrestore.extractall(GAME_DATA_DIRECTORY)
+def restore_from_zip(zfile: zipfile.ZipFile, entry: str, base: Path) -> None:
+    """Restore folder or file from `.zip` file.
+
+    Clears destination folder or removes the file before extracting if
+    one exists.
+
+    Args:
+        zfile: A `.zip` file abstraction entries are restored from.
+        entry: A file or directory to be restored from `.zip` file.
+        base: Base folder which entries will be extracted into.
+    """
+    path = base / entry
+
+    if path.exists():
+        if path.is_dir():
+            _clear_folder(path)
+            logger.debug("Cleared existing folder %s", path)
+        else:
+            path.unlink()
+            logger.debug("Removed existing file %s", path)
+
+    members = [
+        member for member in zfile.namelist() if member.startswith(entry)
+    ]
+    zfile.extractall(base, members)
+    logger.debug("Restored %s from a `.zip` file.", path)
+
+
+BINARY_UNIT_STEP = 2**10
+
+
+def get_file_size_string(path: Path) -> str:
+    """Get formatted string with size of a file.
+
+    Args:
+        path: Path to the file.
+
+    Returns:
+        Size of the file in format "<float-size> <unit>".
+    """
+    size = path.stat().st_size
+
+    if size < BINARY_UNIT_STEP:
+        return f"{size} bytes"
+
+    for unit in "KB", "MB", "GB", "TB", "PB":
+        size /= BINARY_UNIT_STEP
+
+        if size < BINARY_UNIT_STEP:
+            size_unit = unit
+            break
+    else:
+        size /= BINARY_UNIT_STEP
+        size_unit = "EB"
+
+    # Show approximately 3 digits
+    if size < 10:  # small value # noqa: PLR2004
+        size = round(size, 2)
+    elif size < 100:  # medium value # noqa: PLR2004
+        size = round(size, 1)
+    else:  # big value
+        size = int(size)
+
+    return f"{size} {size_unit}"

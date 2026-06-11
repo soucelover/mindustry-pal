@@ -85,7 +85,9 @@ class PalConfig(ChangeDetectionMixin):
         self.config_file.parent.mkdir(parents=True, exist_ok=True)
         self.config_file.touch()
 
-        content = self.model_dump_json(indent=4, exclude_unset=True)
+        content = self.model_dump_json(
+            indent=4, exclude_unset=True, by_alias=True
+        )
         length = self.config_file.write_text(content, encoding="utf-8")
         logger.debug(
             "Written %i characters to %s (configuration file)",

@@ -5,11 +5,17 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from typing import TYPE_CHECKING
 
 import mindustry_pal
-from mindustry_pal.campaigns import create, restore, state, switch
 from mindustry_pal.config import PalConfig
 from mindustry_pal.logging import set_logging_level
 
-from .commands import store_command
+from .commands import (
+    create_command,
+    list_command,
+    restore_command,
+    status_command,
+    store_command,
+    switch_command,
+)
 from .errors import CommandError
 
 if TYPE_CHECKING:
@@ -86,18 +92,25 @@ def register_commands(parser: ArgumentParser) -> None:
     commands = parser.add_subparsers(metavar="command", required=True)
 
     store_parser = add_command(commands, "store", store_command)
-    store_parser.add_argument("name", nargs="?", help="Name of campaign")
+    store_parser.add_argument(
+        "name", nargs="?", help="Optional name of a campaign to store to"
+    )
 
-    restore_parser = add_command(commands, "restore", restore)
-    restore_parser.add_argument("name", nargs="?", help="Name of campaign")
+    restore_parser = add_command(commands, "restore", restore_command)
+    restore_parser.add_argument(
+        "name", nargs="?", help="Optional name of the campaign being restored"
+    )
 
-    create_parser = add_command(commands, "create", create)
-    create_parser.add_argument("name", help="Name of new campaign")
+    create_parser = add_command(commands, "create", create_command)
+    create_parser.add_argument(
+        "name", help="Name of a campaign to be created"
+    )
 
-    switch_parser = add_command(commands, "switch", switch)
-    switch_parser.add_argument("name")
+    switch_parser = add_command(commands, "switch", switch_command)
+    switch_parser.add_argument("name", help="Name of campaign to switch to")
 
-    add_command(commands, "state", state)
+    add_command(commands, "status", status_command)
+    add_command(commands, "list", list_command)
 
 
 def process_logging_parameters(args: Namespace) -> None:
