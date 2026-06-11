@@ -5,7 +5,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from typing import TYPE_CHECKING
 
 import mindustry_pal
-from mindustry_pal.config import PalConfig
+from mindustry_pal import PalConfig
 from mindustry_pal.logging import set_logging_level
 
 from .commands import (
@@ -144,6 +144,12 @@ def cli(args: list[str] | None = None) -> None:
         default=0,
         dest="verbosity",
         help="Use verbose output",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"Mindustry-Pal {mindustry_pal.__version__}",
     )
 
     register_commands(parser)

@@ -4,8 +4,7 @@ from argparse import Namespace
 from collections.abc import Callable
 from functools import wraps
 
-from mindustry_pal.campaigns import CampaignHelper
-from mindustry_pal.config import PalConfig
+from mindustry_pal import CampaignHelper, PalConfig
 
 type CampaignCommand = Callable[[Namespace, CampaignHelper], None]
 type CommandFunction = Callable[[Namespace, PalConfig], None]

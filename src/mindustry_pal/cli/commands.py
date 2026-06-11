@@ -4,10 +4,7 @@ import logging
 from textwrap import dedent
 from typing import TYPE_CHECKING, override
 
-from mindustry_pal.campaigns import (
-    CampaignDoesnExistError,
-    CurrentCampaignNotSetError,
-)
+from mindustry_pal import CampaignDoesntExistError, CurrentCampaignNotSetError
 
 from .base import campaign_dependency
 from .errors import CommandError
@@ -15,7 +12,7 @@ from .errors import CommandError
 if TYPE_CHECKING:
     from argparse import Namespace
 
-    from mindustry_pal.campaigns import CampaignHelper
+    from mindustry_pal import CampaignHelper
 
 
 logger = logging.getLogger(__name__)
@@ -138,7 +135,7 @@ def switch_command(args: Namespace, helper: CampaignHelper) -> None:
 
     try:
         restore_campaign = helper.get_campaign(name, check_exists=True)
-    except CampaignDoesnExistError as exc:
+    except CampaignDoesntExistError as exc:
         msg = f"Campaign file for {exc.campaign.name} doesn't exist on disk"
         raise SwitchCommandError(msg) from exc
 
@@ -169,7 +166,7 @@ def status_command(args: Namespace, helper: CampaignHelper) -> None:
             Use `mindustry-pal store` to store current campaign to a file.
         """)
         logger.info(msg)
-    except CampaignDoesnExistError as exc:
+    except CampaignDoesntExistError as exc:
         msg = dedent("""\
             Current campaign is '%s' but storage file doesn't exist on disk.
             Use `mindustry-pal store` to store current campaign to a file.

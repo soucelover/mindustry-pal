@@ -7,8 +7,9 @@ from typing import ClassVar, Self
 from pydantic import ConfigDict, DirectoryPath, Field
 from pydantic_changedetect import ChangeDetectionMixin
 
-from mindustry_pal.os_utils import GAME_DATA_DIRECTORY, PAL_DIRECTORY
+from .os_utils import GAME_DATA_DIRECTORY, PAL_DIRECTORY
 
+__all__ = ["PalConfig"]
 logger = logging.getLogger(__name__)
 
 
