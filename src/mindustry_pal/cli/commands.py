@@ -41,5 +41,35 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
 
     helper.store(campaign)
     helper.set_current_campaign(campaign)
-    logger.info("Successfully store campaign in a file.")
+    logger.info("Successfully stored campaign in a file.")
     logger.info("  Path: %s", campaign)
+
+
+class RestoreCommandError(CommandError):
+    """Error during `store` command."""
+
+    @override
+    def format_message(self) -> str:
+        return f"Failed to restore campaign: {self!s}"
+
+
+@campaign_dependency
+def restore_command(args: Namespace, helper: CampaignHelper) -> None:
+    """Restore (load) Mindustry campaign from a file.
+
+    Replaces current files with those from stored Mindustry campaign.
+    """
+    name: str | None = args.name
+
+    try:
+        campaign = helper.get_campaign(name)
+    except CurrentCampaignNotSetError as exc:
+        msg = (
+            "Campaign hasn't been stored before, so you have to "
+            "specify a name or store current campaign first."
+        )
+        raise RestoreCommandError(msg) from exc
+
+    helper.restore(campaign)
+    helper.set_current_campaign(campaign)
+    logger.info("Successfully restored campaign from the file.")

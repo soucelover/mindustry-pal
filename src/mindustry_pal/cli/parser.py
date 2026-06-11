@@ -4,11 +4,11 @@ import inspect
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Protocol
 
-from mindustry_pal.campaigns import create, restore, state, switch
+from mindustry_pal.campaigns import create, state, switch
 from mindustry_pal.config import PalConfig
 from mindustry_pal.logging import set_logging_level
 
-from .commands import store_command
+from .commands import restore_command, store_command
 from .errors import CommandError
 
 if TYPE_CHECKING:
@@ -86,7 +86,7 @@ def register_commands(parser: ArgumentParser) -> None:
     store_parser = add_command(commands, "store", store_command)
     store_parser.add_argument("name", nargs="?", help="Name of campaign")
 
-    restore_parser = add_command(commands, "restore", restore)
+    restore_parser = add_command(commands, "restore", restore_command)
     restore_parser.add_argument("name", nargs="?", help="Name of campaign")
 
     create_parser = add_command(commands, "create", create)

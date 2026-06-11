@@ -3,7 +3,9 @@ import zipfile
 from argparse import Namespace
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
+
+from mindustry_pal.files import restore_from_zip
 
 from .cli import CommandError
 from .files import (
@@ -155,7 +157,7 @@ class CurrentCampaignNotSetError(Exception):
     """Current config is missing value for `current-campaign`."""
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(slots=True, frozen=True, eq=True)
 class CampaignStorage:
     """Dataclass representing campaign storage file."""
 
@@ -180,6 +182,13 @@ class CampaignHelper:
     """A helper class for working with campaign files."""
 
     config: PalConfig
+    campaign_members: ClassVar[list[str]] = [
+        "saves/",
+        "mods/",
+        "maps/",
+        "schematics/",
+        "settings.bin",
+    ]
 
     def __init__(self, config: PalConfig) -> None:
         """Initialize class -- store its dependencies.
@@ -202,11 +211,24 @@ class CampaignHelper:
         base = GAME_DATA_DIRECTORY
 
         with zipfile.ZipFile(dst, "w") as zfile:
-            add_to_zip(zfile, base / "saves/", base)
-            add_to_zip(zfile, base / "mods/", base)
-            add_to_zip(zfile, base / "maps/", base)
-            add_to_zip(zfile, base / "schematics/", base)
-            add_to_zip(zfile, base / "settings.bin", base)
+            for member in self.campaign_members:
+                add_to_zip(zfile, base / member, base)
+
+    def restore(self, storage: CampaignStorage) -> None:
+        """Restore Mindustry campaign from a `storage`.
+
+        Args:
+            storage: A `.zip` storage file where Mindustry campaign is
+                restored from.
+        """
+        base = GAME_DATA_DIRECTORY
+        base.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(storage.path, "r") as zfile:
+            for member in self.campaign_members:
+                restore_from_zip(zfile, member, base)
+
+        logger.debug("Restored campaign from %s", storage)
 
     def get_campaign_path(self, name: str) -> Path:
         """Get path of the campaign storage file by its name.
@@ -231,6 +253,18 @@ class CampaignHelper:
         logger.debug(
             "Changed current campaign to %r", self.config.current_campaign
         )
+
+    def is_current_campaign(self, storage: CampaignStorage) -> bool:
+        """Specified storage is current campaign.
+
+        Args:
+            storage: The storage being compared.
+
+        Returns:
+            True if the storage is specified as `current-campaign` in config.
+        """
+        current_campaign = self.get_campaign(check_exists=False)
+        return storage == current_campaign
 
     def get_campaign(
         self, name: str | None = None, *, check_exists: bool = False

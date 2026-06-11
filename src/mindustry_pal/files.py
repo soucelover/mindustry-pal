@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from dataclasses import dataclass
@@ -11,6 +12,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
+logger = logging.getLogger(__name__)
+
+
 def resolve_path(path: Path) -> Path:
     if not path.is_absolute():
         path = Path("campaigns") / path
@@ -22,6 +26,11 @@ def resolve_path(path: Path) -> Path:
 
 
 def clear_folder(folder: Path) -> None:
+    """Remove all entries inside directory and leave it empty.
+
+    Args:
+        folder: Path to the folder.
+    """
     for path in folder.iterdir():
         if path.is_dir():
             shutil.rmtree(path)
@@ -81,6 +90,34 @@ def add_to_zip(zfile: zipfile.ZipFile, entry: Path, base: Path) -> None:
                 filepath = folder / filename
 
                 zfile.write(filepath, filepath.relative_to(base))
+
+
+def restore_from_zip(zfile: zipfile.ZipFile, entry: str, base: Path) -> None:
+    """Restore folder or file from `.zip` file.
+
+    Clears destination folder or removes the file before extracting if
+    one exists.
+
+    Args:
+        zfile: A `.zip` file abstraction entries are restored from.
+        entry: A file or directory to be restored from `.zip` file.
+        base: Base folder which entries will be extracted into.
+    """
+    path = base / entry
+
+    if path.exists():
+        if path.is_dir():
+            clear_folder(path)
+            logger.debug("Cleared existing folder %s", path)
+        else:
+            path.unlink()
+            logger.debug("Removed existing file %s", path)
+
+    members = [
+        member for member in zfile.namelist() if member.startswith(entry)
+    ]
+    zfile.extractall(base, members)
+    logger.debug("Restored %s from a `.zip` file.", path)
 
 
 def restore_zip(zrestore: zipfile.ZipFile) -> None:
