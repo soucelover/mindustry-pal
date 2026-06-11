@@ -110,16 +110,23 @@ class CampaignHelper:
 
         logger.debug("Created empty campaign at %s", storage)
 
-    def store(self, storage: CampaignStorage) -> None:
+    def store(self, storage: CampaignStorage) -> bool:
         """Store current campaign to `storage`.
 
         Args:
             storage: A `.zip` storage file where current Mindustry
                 campaign gets stored to.
+
+        Returns:
+            True if new file was created, False if file was overriden.
         """
         dst = storage.path
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.touch()
+        exists = dst.is_file()
+
+        if not exists:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.touch()
+
         base = GAME_DATA_DIRECTORY
 
         with zipfile.ZipFile(dst, "w") as zfile:
@@ -127,6 +134,7 @@ class CampaignHelper:
                 add_to_zip(zfile, base / member, base)
 
         logger.debug("Stored campaign to %s", storage)
+        return not exists
 
     def restore(self, storage: CampaignStorage) -> None:
         """Restore Mindustry campaign from a `storage`.

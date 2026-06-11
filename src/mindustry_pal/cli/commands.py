@@ -39,9 +39,11 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
      *  schematics/
      *  settings.bin
 
-    If corresponding options were not specified and your action is required,
-    you will be prompted. Otherwise, command proceeds without terminal
-    interactions.
+    Campaign gets stored inside application folder.
+
+    If corresponding options were not specified and your attention is
+    required, you will be prompted. Otherwise, command proceeds without
+    terminal interactions.
     """
     name: str | None = args.name
     exists_ok: bool | None = args.exists_ok
@@ -55,10 +57,13 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
         campaign = helper.get_campaign(name)
     except CurrentCampaignNotSetError as exc:
         if current_campaign is True:
-            msg = (
-                "Mindustry campaign hasn't been stored before, so you have "
-                "to specify a name for a new campaign."
-            )
+            msg = dedent("""\
+                Mindustry campaign
+                hasn't been stored before, so you have to specify a name for a new
+                campaign.
+
+                Tip: This error is shown because you've specified '--current-campaign'.
+            """)  # noqa: E501
             raise StoreCommandError(msg) from exc
 
         msg = dedent("""\
@@ -94,10 +99,22 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
             if proceed is False:
                 return
 
-    helper.store(campaign)
+    result = helper.store(campaign)
     helper.set_current_campaign(campaign)
-    logger.info("Successfully stored campaign in a file.")
-    logger.info("  Path: %s", campaign)
+
+    msg = dedent("""\
+        Successfully stored campaign '%s' in %s file.
+
+          Path: %s
+          Size: %s
+    """)
+    logger.info(
+        msg,
+        campaign.name,
+        ("the existing", "a new")[result],
+        campaign,
+        campaign.size_str,
+    )
 
 
 class RestoreCommandError(CommandError):
