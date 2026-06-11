@@ -26,31 +26,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def restore(args: Namespace, config: PalConfig) -> None:
-    """Restore campaign"""
-    if args.name is None:
-        name = config.current_campaign
-
-        if name is None:
-            msg = (
-                "Failed to restore current campaign. "
-                "You should specify name argument or store current campaign"
-            )
-            raise CommandError(msg)
-    else:
-        name = args.name
-
-    restore = resolve_path(Path(name))
-    restore.parent.mkdir(parents=True, exist_ok=True)
-    restore.touch()
-
-    with zipfile.ZipFile(restore, "r") as zrestore:
-        restore_zip(zrestore)
-
-    config.current_campaign = restore.name
-    logger.info("Successfully stored campaign.")
-
-
 def create(args: Namespace, config: PalConfig) -> None:
     """Create new campaign and switch to it."""
     err_msg_prefix = "Failed to create new mindustry campaign"
