@@ -2,7 +2,7 @@ import logging
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, override
 
 from mindustry_pal.files import get_file_size_string
 
@@ -57,8 +57,19 @@ class CampaignStorage:
 
         return mtime.strftime("%c")
 
+    @override
+    def __eq__(self, another: object) -> bool:
+        if not isinstance(another, CampaignStorage):
+            return NotImplemented
+
+        return self.path.resolve() == another.path.resolve()
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.path)
+
+    @override
     def __str__(self) -> str:
-        """String representation of campaign file path."""
         return str(self.path)
 
 
