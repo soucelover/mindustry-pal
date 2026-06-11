@@ -4,6 +4,7 @@ import inspect
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from typing import TYPE_CHECKING
 
+import mindustry_pal
 from mindustry_pal.campaigns import create, restore, state, switch
 from mindustry_pal.cli.commands import store_command
 from mindustry_pal.config import load_config
@@ -19,12 +20,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .base import CommandFunction
-
-
-name = "manage.py"
-usage = None
-description = "Manager made for mindustry game."
-epilog = "epi"
 
 
 def add_command(
@@ -107,7 +102,10 @@ def process_logging_parameters(args: Namespace) -> None:
 
 
 def cli(args: list[str] | None = None) -> None:
-    parser = ArgumentParser(name, usage, description, epilog)
+    body = inspect.getdoc(mindustry_pal)
+    parser = ArgumentParser(
+        description=body, formatter_class=RawDescriptionHelpFormatter
+    )
     parser.add_argument(
         "-q",
         "--quiet",
