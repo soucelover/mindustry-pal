@@ -4,7 +4,8 @@ import inspect
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Protocol
 
-from mindustry_pal.campaigns import create, state, switch
+from mindustry_pal.campaigns import state, switch
+from mindustry_pal.cli.commands import create_command
 from mindustry_pal.config import PalConfig
 from mindustry_pal.logging import set_logging_level
 
@@ -84,13 +85,19 @@ def register_commands(parser: ArgumentParser) -> None:
     commands = parser.add_subparsers(metavar="command", required=True)
 
     store_parser = add_command(commands, "store", store_command)
-    store_parser.add_argument("name", nargs="?", help="Name of campaign")
+    store_parser.add_argument(
+        "name", nargs="?", help="Optional name of a campaign to store to"
+    )
 
     restore_parser = add_command(commands, "restore", restore_command)
-    restore_parser.add_argument("name", nargs="?", help="Name of campaign")
+    restore_parser.add_argument(
+        "name", nargs="?", help="Optional name of the campaign being restored"
+    )
 
-    create_parser = add_command(commands, "create", create)
-    create_parser.add_argument("name", help="Name of new campaign")
+    create_parser = add_command(commands, "create", create_command)
+    create_parser.add_argument(
+        "name", help="Name of a campaign to be created"
+    )
 
     switch_parser = add_command(commands, "switch", switch)
     switch_parser.add_argument("name")

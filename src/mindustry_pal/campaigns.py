@@ -5,13 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
-from mindustry_pal.files import restore_from_zip
-
 from .cli import CommandError
 from .files import (
     add_to_zip,
-    clear_folder,
     resolve_path,
+    restore_from_zip,
     restore_zip,
     store_to_zip,
 )
@@ -24,41 +22,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-def create(args: Namespace, config: PalConfig) -> None:
-    """Create new campaign and switch to it."""
-    err_msg_prefix = "Failed to create new mindustry campaign"
-
-    if config.current_campaign is None:
-        msg = (
-            f"{err_msg_prefix}: "
-            "you should store current campaign before creating new."
-        )
-        raise CommandError(msg)
-
-    current = resolve_path(Path(config.current_campaign))
-    new = resolve_path(Path(args.name))
-
-    if new.exists():
-        msg = f"{err_msg_prefix}: you must create new campaign, not existing."
-        raise CommandError(msg)
-
-    current.parent.mkdir(parents=True, exist_ok=True)
-    current.touch()
-
-    with zipfile.ZipFile(current, "w") as zstore:
-        store_to_zip(zstore)
-
-    new.parent.mkdir(parents=True, exist_ok=True)
-    new.touch()
-
-    with zipfile.ZipFile(new, "w"):
-        pass
-
-    clear_folder(GAME_DATA_DIRECTORY)
-    config.current_campaign = new.name
-    logger.info("Successfully created new campaign.")
 
 
 def switch(args: Namespace, config: PalConfig) -> None:
@@ -173,6 +136,23 @@ class CampaignHelper:
         """
         self.config = config
 
+    def create(self, storage: CampaignStorage) -> None:
+        """Create a new storage file.
+
+        If file already exists, it gets overriden.
+
+        Args:
+            storage: Path to a `.zip` file to be created.
+        """
+        dst = storage.path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.touch()
+
+        with zipfile.ZipFile(dst, "w"):
+            pass
+
+        logger.debug("Created empty campaign at %s", storage)
+
     def store(self, storage: CampaignStorage) -> None:
         """Store current campaign to `storage`.
 
@@ -188,6 +168,8 @@ class CampaignHelper:
         with zipfile.ZipFile(dst, "w") as zfile:
             for member in self.campaign_members:
                 add_to_zip(zfile, base / member, base)
+
+        logger.debug("Stored campaign to %s", storage)
 
     def restore(self, storage: CampaignStorage) -> None:
         """Restore Mindustry campaign from a `storage`.

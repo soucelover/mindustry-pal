@@ -46,7 +46,7 @@ def store_command(args: Namespace, helper: CampaignHelper) -> None:
 
 
 class RestoreCommandError(CommandError):
-    """Error during `store` command."""
+    """Error during `restore` command."""
 
     @override
     def format_message(self) -> str:
@@ -73,3 +73,40 @@ def restore_command(args: Namespace, helper: CampaignHelper) -> None:
     helper.restore(campaign)
     helper.set_current_campaign(campaign)
     logger.info("Successfully restored campaign from the file.")
+
+
+class CreateCommandError(CommandError):
+    """Error during `create` command."""
+
+    @override
+    def format_message(self) -> str:
+        return f"Failed to create a new campaign: {self!s}"
+
+
+@campaign_dependency
+def create_command(args: Namespace, helper: CampaignHelper) -> None:
+    """Create a new empty Mindustry campaign and switch to it."""
+    name: str = args.name
+
+    try:
+        current_campaign = helper.get_campaign()
+    except CurrentCampaignNotSetError as exc:
+        msg = "You should store current campaign before creating a new one."
+        raise CreateCommandError(msg) from exc
+
+    new_campaign = helper.get_campaign(name)
+
+    if new_campaign.exists:
+        msg = "Campaign with this name already exists"
+        raise CreateCommandError(msg)
+
+    helper.store(current_campaign)
+    logger.info(
+        "Current campaign (%s) was stored to a file", current_campaign.name
+    )
+
+    helper.create(new_campaign)
+    helper.restore(new_campaign)
+    helper.set_current_campaign(new_campaign)
+    logger.info("Successfully created new empty campaign and switched to it.")
+    logger.info("  Path: %s", new_campaign)

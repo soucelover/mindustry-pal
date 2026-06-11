@@ -25,7 +25,7 @@ def resolve_path(path: Path) -> Path:
     return path.resolve()
 
 
-def clear_folder(folder: Path) -> None:
+def _clear_folder(folder: Path) -> None:
     """Remove all entries inside directory and leave it empty.
 
     Args:
@@ -107,7 +107,7 @@ def restore_from_zip(zfile: zipfile.ZipFile, entry: str, base: Path) -> None:
 
     if path.exists():
         if path.is_dir():
-            clear_folder(path)
+            _clear_folder(path)
             logger.debug("Cleared existing folder %s", path)
         else:
             path.unlink()
@@ -121,5 +121,5 @@ def restore_from_zip(zfile: zipfile.ZipFile, entry: str, base: Path) -> None:
 
 
 def restore_zip(zrestore: zipfile.ZipFile) -> None:
-    clear_folder(GAME_DATA_DIRECTORY)
+    _clear_folder(GAME_DATA_DIRECTORY)
     zrestore.extractall(GAME_DATA_DIRECTORY)
