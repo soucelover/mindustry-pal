@@ -74,3 +74,41 @@ def restore_from_zip(zfile: zipfile.ZipFile, entry: str, base: Path) -> None:
     ]
     zfile.extractall(base, members)
     logger.debug("Restored %s from a `.zip` file.", path)
+
+
+BINARY_UNIT_STEP = 2**10
+
+
+def get_file_size_string(path: Path) -> str:
+    """Get formatted string with size of a file.
+
+    Args:
+        path: Path to the file.
+
+    Returns:
+        Size of the file in format "<float-size> <unit>".
+    """
+    size = path.stat().st_size
+
+    if size < BINARY_UNIT_STEP:
+        return f"{size} bytes"
+
+    for unit in "KB", "MB", "GB", "TB", "PB":
+        size /= BINARY_UNIT_STEP
+
+        if size < BINARY_UNIT_STEP:
+            size_unit = unit
+            break
+    else:
+        size /= BINARY_UNIT_STEP
+        size_unit = "EB"
+
+    # Show approximately 3 digits
+    if size < 10:  # small value # noqa: PLR2004
+        size = round(size, 2)
+    elif size < 100:  # medium value # noqa: PLR2004
+        size = round(size, 1)
+    else:  # big value
+        size = int(size)
+
+    return f"{size} {size_unit}"

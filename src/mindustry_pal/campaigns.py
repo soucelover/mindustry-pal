@@ -2,8 +2,11 @@ import logging
 import zipfile
 from argparse import Namespace
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
+
+from mindustry_pal.files import get_file_size_string
 
 from .files import add_to_zip, restore_from_zip
 from .os_utils import GAME_DATA_DIRECTORY
@@ -66,9 +69,33 @@ class CampaignStorage:
         """Check if the storage file does exist."""
         return self.path.is_file()
 
+    @property
+    def size_str(self) -> str:
+        """Get formatted string with size of a campaign file."""
+        return get_file_size_string(self.path)
+
+    @property
+    def timestamp(self) -> str:
+        """Get a locale's representation of campaign file timestamp."""
+        # Get a naive datetime object to use OS default timezone
+        mtime = datetime.fromtimestamp(self.path.stat().st_mtime)  # noqa: DTZ006
+
+        return mtime.strftime("%c")
+
     def __str__(self) -> str:
         """String representation of campaign file path."""
         return str(self.path)
+
+
+class CampaignDoesnExistError(Exception):
+    """Selected campaign doesn't exist on dsk."""
+
+    campaign: CampaignStorage
+
+    def __init__(self, *args: object, campaign: CampaignStorage) -> None:
+        super().__init__(*args)
+
+        self.campaign = campaign
 
 
 class CampaignHelper:
@@ -191,8 +218,8 @@ class CampaignHelper:
         Raises:
             CurrentCampaignNotSetError: If name is `None` and config is
                 missing `current-campaign` entry.
-            FileNotFoundError: If `check_exists` was specified and campaign
-                does not exist.
+            CampaignDoesnExistError: If `check_exists` was specified and
+                campaign does not exist.
         """
         if name is None:
             if self.config.current_campaign is None:
@@ -207,7 +234,16 @@ class CampaignHelper:
         campaign = CampaignStorage(self.get_campaign_path(name))
 
         if check_exists and not campaign.exists:
-            msg_0 = f"Campaign file {campaign} does not exist"
-            raise FileNotFoundError(msg_0)
+            msg = f"Campaign file {campaign} does not exist"
+            raise CampaignDoesnExistError(msg, campaign=campaign)
 
         return campaign
+
+    def list_campaigns(self) -> list[CampaignStorage]:
+        """Get list of existing campaign storage files.
+
+        Returns:
+            List of campaigns storage files Mindustry-Pal can find.
+        """
+        campaigns_dir = self.config.get_campaigns_dir()
+        return [CampaignStorage(path) for path in campaigns_dir.iterdir()]

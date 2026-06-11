@@ -1,9 +1,13 @@
 """CLI commands definitions."""
 
 import logging
+from textwrap import dedent
 from typing import TYPE_CHECKING, override
 
-from mindustry_pal.campaigns import CurrentCampaignNotSetError
+from mindustry_pal.campaigns import (
+    CampaignDoesnExistError,
+    CurrentCampaignNotSetError,
+)
 
 from .base import campaign_dependency
 from .errors import CommandError
@@ -134,12 +138,12 @@ def switch_command(args: Namespace, helper: CampaignHelper) -> None:
 
     try:
         restore_campaign = helper.get_campaign(name, check_exists=True)
-    except FileNotFoundError as exc:
-        msg = f"Campaign file for {name} doesn't exist on disk"
+    except CampaignDoesnExistError as exc:
+        msg = f"Campaign file for {exc.campaign.name} doesn't exist on disk"
         raise SwitchCommandError(msg) from exc
 
     if restore_campaign == current_campaign:
-        logger.info("Already on campaign %s", current_campaign.name)
+        logger.info("Already on campaign '%s'", current_campaign.name)
         return
 
     helper.store(current_campaign)
@@ -150,5 +154,39 @@ def switch_command(args: Namespace, helper: CampaignHelper) -> None:
     helper.restore(restore_campaign)
     helper.set_current_campaign(restore_campaign)
     logger.info(
-        "Successfully switched to campaign %s.", restore_campaign.name
+        "Successfully switched to campaign '%s'.", restore_campaign.name
     )
+
+
+@campaign_dependency
+def status_command(args: Namespace, helper: CampaignHelper) -> None:
+    """Get status for the state of current campaign."""
+    try:
+        current_campaign = helper.get_campaign(check_exists=True)
+    except CurrentCampaignNotSetError:
+        msg = dedent("""\
+            Campaign hasn't been stored yet.
+            Use `mindustry-pal store` to store current campaign to a file.
+        """)
+        logger.info(msg)
+    except CampaignDoesnExistError as exc:
+        msg = dedent("""\
+            Current campaign is '%s' but storage file doesn't exist on disk.
+            Use `mindustry-pal store` to store current campaign to a file.
+        """)
+        logger.info(msg, exc.campaign.name)
+    else:
+        msg = dedent("""\
+            Current campaign is '%s'
+
+              Path: %s
+              Size: %s
+              Timestamp: %s
+        """)
+        logger.info(
+            msg,
+            current_campaign.name,
+            current_campaign,
+            current_campaign.size_str,
+            current_campaign.timestamp,
+        )

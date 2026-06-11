@@ -4,13 +4,13 @@ import inspect
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Protocol
 
-from mindustry_pal.campaigns import state
 from mindustry_pal.config import PalConfig
 from mindustry_pal.logging import set_logging_level
 
 from .commands import (
     create_command,
     restore_command,
+    status_command,
     store_command,
     switch_command,
 )
@@ -106,7 +106,7 @@ def register_commands(parser: ArgumentParser) -> None:
     switch_parser = add_command(commands, "switch", switch_command)
     switch_parser.add_argument("name", help="Name of campaign to switch to")
 
-    add_command(commands, "state", state)
+    add_command(commands, "status", status_command)
 
 
 def process_logging_parameters(args: Namespace) -> None:
