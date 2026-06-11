@@ -63,7 +63,7 @@ class CampaignStorage:
 
 
 class CampaignDoesntExistError(Exception):
-    """Selected campaign doesn't exist on dsk."""
+    """Selected campaign doesn't exist on disk."""
 
     campaign: CampaignStorage
 
@@ -158,7 +158,7 @@ class CampaignHelper:
         return path.with_suffix(path.suffix + ".zip")
 
     def set_current_campaign(self, storage: CampaignStorage) -> None:
-        """Set curently selected campaign pointer to this file in the config.
+        """Set currently selected campaign pointer to this file in the config.
 
         Args:
             storage: Campaign storage file that will be marked as current.
