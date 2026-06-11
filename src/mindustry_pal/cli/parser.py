@@ -9,6 +9,7 @@ from mindustry_pal.logging import set_logging_level
 
 from .commands import (
     create_command,
+    list_command,
     restore_command,
     status_command,
     store_command,
@@ -107,6 +108,7 @@ def register_commands(parser: ArgumentParser) -> None:
     switch_parser.add_argument("name", help="Name of campaign to switch to")
 
     add_command(commands, "status", status_command)
+    add_command(commands, "list", list_command)
 
 
 def process_logging_parameters(args: Namespace) -> None:

@@ -1,9 +1,7 @@
 import logging
 import zipfile
-from argparse import Namespace
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from mindustry_pal.files import get_file_size_string
@@ -12,41 +10,12 @@ from .files import add_to_zip, restore_from_zip
 from .os_utils import GAME_DATA_DIRECTORY
 
 if TYPE_CHECKING:
-    from argparse import Namespace
+    from pathlib import Path
 
     from .config import PalConfig
 
 
 logger = logging.getLogger(__name__)
-
-
-def state(args: Namespace, config: PalConfig) -> None:
-    if config.current_campaign is None:
-        logger.info("Current campaign wasn't previously stored.")
-        current = None
-    else:
-        current = config.current_campaign
-        logger.info("Current campaign is %r.", current)
-
-    other_campaigns = [
-        i for i in Path("./campaigns").iterdir() if i.name != current
-    ]
-
-    if other_campaigns:
-        msg = f"{'Also' if current else 'But'} there "
-
-        if len(other_campaigns) == 1:
-            msg += (
-                f"is {'another' if current else 'one'} stored campaign "
-                f"named {other_campaigns[0]}"
-            )
-        else:
-            msg += "are also other campaigns:\n"
-            msg += "\n".join(
-                f"  - {campaign.name}" for campaign in other_campaigns
-            )
-
-        logger.info(msg)
 
 
 class CurrentCampaignNotSetError(Exception):
@@ -202,7 +171,11 @@ class CampaignHelper:
         Returns:
             True if the storage is specified as `current-campaign` in config.
         """
-        current_campaign = self.get_campaign(check_exists=False)
+        try:
+            current_campaign = self.get_campaign(check_exists=False)
+        except CurrentCampaignNotSetError:
+            return False
+
         return storage == current_campaign
 
     def get_campaign(

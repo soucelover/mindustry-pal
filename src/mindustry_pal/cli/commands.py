@@ -190,3 +190,17 @@ def status_command(args: Namespace, helper: CampaignHelper) -> None:
             current_campaign.size_str,
             current_campaign.timestamp,
         )
+
+
+@campaign_dependency
+def list_command(args: Namespace, helper: CampaignHelper) -> None:
+    """Get the list of all stored campaigns."""
+    campaigns = helper.list_campaigns()
+
+    for campaign in campaigns:
+        is_current = helper.is_current_campaign(campaign)
+
+        if is_current:
+            logger.info("%s (current)", campaign.name)
+        else:
+            logger.info(campaign.name)
