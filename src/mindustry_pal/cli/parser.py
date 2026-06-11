@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 import mindustry_pal
 from mindustry_pal.campaigns import create, restore, state, switch
-from mindustry_pal.cli.commands import store_command
-from mindustry_pal.config import load_config
+from mindustry_pal.config import PalConfig
 from mindustry_pal.logging import set_logging_level
 
+from .commands import store_command
 from .errors import CommandError
 
 if TYPE_CHECKING:
@@ -140,7 +140,9 @@ def cli(args: list[str] | None = None) -> None:
     try:
         process_logging_parameters(parsed)
 
-        config = load_config()
+        config = PalConfig.load()
         parsed.command(parsed, config)
     except CommandError as exc:
         exc.log()
+    else:
+        config.save(if_changed=True)

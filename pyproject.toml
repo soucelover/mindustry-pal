@@ -27,6 +27,7 @@ dynamic = ["version"]
 requires-python = ">=3.14"
 dependencies = [
     "pydantic>=2.13.4",
+    "pydantic-changedetect>=0.10.1",
     "termcolor>=3.3.0",
 ]
 
@@ -96,7 +97,10 @@ convention = "google"
 ignorelist = ["id"]
 
 [tool.ruff.lint.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_changedetect.ChangeDetectionMixin",
+]
 
 # ================
 # Pyright Settings
